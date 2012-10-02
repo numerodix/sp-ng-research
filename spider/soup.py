@@ -34,6 +34,10 @@ def main(filepath):
         url = elem.get('src')
         urls.append(url)
 
+    for elem in soup.find_all('iframe'):
+        url = elem.get('src')
+        urls.append(url)
+
     display(urls)
 
 def display(urls):
