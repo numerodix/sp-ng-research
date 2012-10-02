@@ -15,8 +15,9 @@ class Url(Base):
     __tablename__ = 'urls'
 
     id = Column(Integer, primary_key=True)
-    hash = Column(String)
     url = Column(String)
+    hash = Column(String)
+    level = Column(Integer)
 
     parent_id = Column(Integer, ForeignKey('urls.id'))
     children = relationship(
@@ -24,20 +25,20 @@ class Url(Base):
         backref=backref('parent', remote_side=[id])
     )
 
-    def __init__(self, url, children=None):
+    def __init__(self, url, level, children=None):
         self.url = url
         self.hash = hashlib.md5(url).hexdigest()
-
-        children = children and children or []
-        self.children = children
+        self.level = level
+        self.children = children or []
 
     def __repr__(self):
-        return "<Url('%s', '%s')>" % (self.hash, self.url)
+        return ("<Url(level %s, %s children, '%s')>" %
+                (self.level, len(self.children), self.url))
 
 
 def main():
-    #engine = create_engine('sqlite:///:memory:')
-    engine = create_engine('sqlite:///store.sqlite')
+    engine = create_engine('sqlite:///:memory:')
+    #engine = create_engine('sqlite:///store.sqlite')
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -57,13 +58,13 @@ def main():
     }
 
     for parent, children in demoset.items():
-        ch = [Url(c) for c in children]
-        url = Url(parent, children=ch)
+        ch = [Url(c, 2) for c in children]
+        url = Url(parent, 1, children=ch)
         session.add(url)
 
     session.commit()
 
-    for url in session.query(Url).all():
+    for url in session.query(Url).filter(Url.level == 1):
         print url
         for i, ch in enumerate(url.children, 1):
             print ' ', i, ch
