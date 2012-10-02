@@ -38,7 +38,8 @@ def main():
 
     session.commit()
 
-    print session.query(Url).count()
+    for url in session.query(Url).all():
+        print url
 
 
 if __name__ == '__main__':
