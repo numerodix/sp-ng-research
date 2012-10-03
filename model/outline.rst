@@ -18,6 +18,7 @@ Url
 
 - status : int
 - visited : datetime
+- parent: Url
 - children : [Url]
 
 Web
