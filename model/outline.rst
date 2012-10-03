@@ -5,6 +5,10 @@ QueuedUrl
 - level : int
 - type : anchor|img|script|iframe|...
 
+Queue
+-----
+- urls: [Url]
+
 Url
 -----
 - id : int/hash
