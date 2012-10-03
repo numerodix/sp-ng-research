@@ -7,3 +7,5 @@ lxml  # for beautifulsoup: improved performance & parsing capability
 SQLAlchemy
 
 Twisted
+
+pep8  # coding style check
