@@ -10,6 +10,8 @@ Url
 - id : int/hash
 - url : string
 - level : int
+- type : anchor|img|script|iframe|...
+
 - status : int
 - visited : datetime
 - children : [Url]
