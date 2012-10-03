@@ -8,4 +8,7 @@ SQLAlchemy
 
 Twisted
 
+MarkupSafe  # autoescaping for jinja
+Jinja2  # jinja templates
+
 pep8  # coding style check
