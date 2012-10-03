@@ -3,7 +3,7 @@ QueuedUrl
 - id : any
 - url : string
 - level : int
-- type : anchor|img|script|iframe|...
+- contexts : [anchor|img|script|iframe|...]
 
 Queue
 -----
@@ -14,7 +14,7 @@ Url
 - id : int/hash
 - url : string
 - level : int
-- type : anchor|img|script|iframe|...
+- contexts : [anchor|img|script|iframe|...]
 
 - status : int
 - visited : datetime
