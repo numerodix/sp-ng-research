@@ -1,3 +1,5 @@
+import sys
+
 from twisted.internet import reactor
 from twisted.python import log, util
 
@@ -70,6 +72,64 @@ class Url(UrlModel, DbManager):
         manager.d.addErrback(lambda _: log.err)
         manager.d.addBoth(lambda _: reactor.stop())
     
+
+if __name__ == '__main__':
+    table_name = 'urls'
+    schema = '''
+    CREATE TABLE %s (
+        id      integer PRIMARY KEY,
+        url     varchar(255) NOT NULL,
+        status  integer NOT NULL
+    )
+    ''' % table_name
+
+    def err(e):
+        print 'err:', e
+
+    def show(v):
+        print v
+
+    def quit(_):
+        reactor.stop()
+
+    conn = txpostgres.Connection()
+    d = conn.connect(database='webber')
+
+    def create_cursor(_):
+        print 12, _
+        return conn.cursor()
+
+    def create_schema(cursor):
+        print 43, cursor
+        return cursor.execute(schema)
+        print e
+
+    def do_insert(cursor):
+        return cursor.execute("insert into urls values (%s, '%s', %s)" %
+                           (1, 'http://yahoo.com', 200))
+
+    def do_query(cursor):
+        print 56, cursor
+        return conn.runQuery('select * from urls')
+
+    d.addCallback(create_cursor)
+    d.addCallback(create_schema)
+
+    d.addCallback(do_insert)
+
+    d.addCallback(do_query)
+
+    d.addCallback(show)
+
+    d.addErrback(log.err)
+    d.addBoth(quit)
+
+
+
+    reactor.run()
+
+    sys.exit()
+
 
 if __name__ == '__main__':
     url = Url(
