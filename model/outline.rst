@@ -7,7 +7,7 @@ QueuedUrl
 
 Queue
 -----
-- urls: [Url]
+- urls : [Url]
 
 Url
 -----
@@ -18,7 +18,7 @@ Url
 
 - status : int
 - visited : datetime
-- parent: Url
+- parent : Url
 - children : [Url]
 
 Web
