@@ -5,6 +5,8 @@ beautifulsoup4  # beautifulsoup
 lxml  # for beautifulsoup: improved performance & parsing capability
 
 SQLAlchemy
+psycopg2>=2.2.0  # used by txpostgres
+txpostgres  # postgres for twisted
 
 Twisted
 
