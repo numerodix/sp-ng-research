@@ -4,6 +4,7 @@ import os
 import sys
 
 from twisted.web import server
+from twisted.web import static
 from twisted.web import resource
 from twisted.internet import reactor
 from twisted.python import log
@@ -11,24 +12,25 @@ from twisted.python import log
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
-content_types = {
-    '.png': 'image/png',
-    '.css': 'text/css',
-    '.js': 'application/x-javascript',
-}
-
 
 def get_package_path():
     return os.path.dirname(os.path.abspath(__file__))
 
-class IndexResource(resource.Resource):
-    isLeaf = True
+class Root(resource.Resource):
+    def __init__(self):
+        resource.Resource.__init__(self)
+        self.putChild('', Home())
+
+    def getChild(self, name, request):
+        if request.uri.startswith('/static/'):
+            fp = os.path.join(get_package_path(), 'static')
+            return static.File(fp)
+        return resource.ErrorPage(404, 'Not found', 'Dunno where I put it')
+
+class Home(resource.Resource):
     numberRequests = 0
 
     def render_GET(self, request):
-        if request.uri.startswith('/static/'):
-            return self.serve_static(request)
-
         self.numberRequests += 1
         msg = "I am request #%s\n" % self.numberRequests
 
@@ -44,17 +46,7 @@ class IndexResource(resource.Resource):
         request.setHeader('content-type', 'text/html')
         return html.encode('utf8')
 
-    def serve_static(self, request):
-        base_path = get_package_path()
-        fp = os.path.join(base_path, request.uri[1:])
-        if os.path.isfile(fp):
-            _, ext = os.path.splitext(fp)
-            content = open(fp).read()
 
-            request.setHeader('content-type', content_types.get(ext))
-            return content
-
-
-reactor.listenTCP(8000, server.Site(IndexResource()))
+reactor.listenTCP(8000, server.Site(Root()))
 log.startLogging(sys.stdout)
 reactor.run()
