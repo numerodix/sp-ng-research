@@ -1,10 +1,10 @@
-# pip install -r requirements.txt
-ipython
+# pip install -r requirements_pre.txt && pip install -r requirements.txt
 
-beautifulsoup4  # beautifulsoup
 lxml  # for beautifulsoup: improved performance & parsing capability
+beautifulsoup4  # beautifulsoup
 
-SQLAlchemy
+#SQLAlchemy  # disable: does not play super well with Twisted
+
 psycopg2>=2.2.0  # used by txpostgres
 txpostgres  # postgres for twisted
 
