@@ -18,12 +18,12 @@ content_types = {
 }
 
 
+def get_package_path():
+    return os.path.dirname(os.path.abspath(__file__))
+
 class IndexResource(resource.Resource):
     isLeaf = True
     numberRequests = 0
-
-    def get_package_path(self):
-        return os.path.dirname(os.path.abspath(__file__))
 
     def render_GET(self, request):
         if request.uri.startswith('/static/'):
@@ -32,7 +32,7 @@ class IndexResource(resource.Resource):
         self.numberRequests += 1
         msg = "I am request #%s\n" % self.numberRequests
 
-        path = os.path.join(self.get_package_path(), 'templates')
+        path = os.path.join(get_package_path(), 'templates')
         loader = FileSystemLoader(path)
         env = Environment(loader=loader)
         temp = env.get_template('index.html')
@@ -45,7 +45,7 @@ class IndexResource(resource.Resource):
         return html.encode('utf8')
 
     def serve_static(self, request):
-        base_path = self.get_package_path()
+        base_path = get_package_path()
         fp = os.path.join(base_path, request.uri[1:])
         if os.path.isfile(fp):
             _, ext = os.path.splitext(fp)
