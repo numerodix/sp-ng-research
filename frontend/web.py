@@ -59,7 +59,7 @@ class Home(resource.Resource):
         ))
 
 
-
-reactor.listenTCP(8000, server.Site(Root()))
-log.startLogging(sys.stdout)
-reactor.run()
+if __name__ == '__main__':
+    reactor.listenTCP(8000, server.Site(Root()))
+    log.startLogging(sys.stdout)
+    reactor.run()
