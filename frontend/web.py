@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+from datetime import datetime
+import json
 import os
+import random
 import sys
 
 from twisted.web import server
@@ -26,6 +29,12 @@ def render_to_response(request, template, context):
     request.setHeader('content-type', 'text/html')
     return html.encode('utf8')
 
+
+_files = {
+    'a': 0,
+    'b': 0,
+    'c': 0,
+}
 
 class Root(resource.Resource):
     hits = 0
@@ -57,6 +66,7 @@ class Home(resource.Resource):
         return render_to_response(request, 'index.html', dict(
             title='Webber',
             msg=msg,
+            files=_files,
         ))
 
 class JsonView(resource.Resource):
@@ -66,10 +76,18 @@ class JsonView(resource.Resource):
     def render_GET(self, request):
         self.root.hits += 1
 
-        from datetime import datetime
-        import json
+        payload = {}
+
+        for f in _files:
+            progress = _files[f]
+            if progress < 100:
+                delta = random.randint(0, 1)
+                if delta:
+                    _files[f] += delta
+                    payload[f] = _files[f]
+
         dct = {
-            'now': str(datetime.utcnow()),
+            'files': payload,
         }
         return json.dumps(dct)
 
