@@ -16,6 +16,17 @@ from jinja2 import FileSystemLoader
 def get_package_path():
     return os.path.dirname(os.path.abspath(__file__))
 
+def render_to_response(request, template, context):
+    path = os.path.join(get_package_path(), 'templates')
+    loader = FileSystemLoader(path)
+    env = Environment(loader=loader)
+    temp = env.get_template(template)
+    html = temp.render(context)
+
+    request.setHeader('content-type', 'text/html')
+    return html.encode('utf8')
+
+
 class Root(resource.Resource):
     hits = 0
 
@@ -41,17 +52,11 @@ class Home(resource.Resource):
         self.root.hits += 1
         msg = "Page views: %s, Hits: %s\n" % (self.pageviews, self.root.hits)
 
-        path = os.path.join(get_package_path(), 'templates')
-        loader = FileSystemLoader(path)
-        env = Environment(loader=loader)
-        temp = env.get_template('index.html')
-        html = temp.render(
-            title="Webber",
-            msg=msg
-        )
+        return render_to_response(request, 'index.html', dict(
+            title='Webber',
+            msg=msg,
+        ))
 
-        request.setHeader('content-type', 'text/html')
-        return html.encode('utf8')
 
 
 reactor.listenTCP(8000, server.Site(Root()))
