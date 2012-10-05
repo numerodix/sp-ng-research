@@ -26,8 +26,9 @@ def render_to_response(request, template, context):
     temp = env.get_template(template)
     html = temp.render(context)
 
-    request.setHeader('content-type', 'text/html')
-    return html.encode('utf8')
+    charset = 'utf-8'
+    request.setHeader('content-type', 'text/html; charset=%s' % charset)
+    return html.encode(charset)
 
 
 _files = {
