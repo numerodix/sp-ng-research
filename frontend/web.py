@@ -32,13 +32,14 @@ class Root(resource.Resource):
 
     def __init__(self):
         resource.Resource.__init__(self)
+
         self.putChild('', Home(self))
+
+        fp = os.path.join(get_package_path(), 'static')
+        self.putChild('static', static.File(fp))
 
     def getChild(self, name, request):
         self.hits += 1
-        if request.uri.startswith('/static/'):
-            fp = os.path.join(get_package_path(), 'static')
-            return static.File(fp)
         return resource.ErrorPage(404, '404', 'Not found')
 
 class Home(resource.Resource):
