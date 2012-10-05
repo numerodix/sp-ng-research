@@ -21,11 +21,21 @@
 
             <div class="hero-unit">
                 <h1>{{ msg }}</h1>
+                <div id="now">
+                    time
+                </div>
             </div>
 
         </div>
 
         <script src="/static/vendor/jquery/jquery-latest.js"></script>
         <script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
+        <script>
+            setInterval(function(){
+                $.ajax({ url: "/_json", success: function(data){
+                    $('#now').text(data.now);
+                }, dataType: "json"});
+            }, 1000);
+        </script>
     </body>
 </html>

@@ -34,6 +34,7 @@ class Root(resource.Resource):
         resource.Resource.__init__(self)
 
         self.putChild('', Home(self))
+        self.putChild('_json', JsonView())
 
         fp = os.path.join(get_package_path(), 'static')
         self.putChild('static', static.File(fp))
@@ -57,6 +58,15 @@ class Home(resource.Resource):
             title='Webber',
             msg=msg,
         ))
+
+class JsonView(resource.Resource):
+    def render_GET(self, request):
+        from datetime import datetime
+        import json
+        dct = {
+            'now': str(datetime.utcnow()),
+        }
+        return json.dumps(dct)
 
 
 if __name__ == '__main__':
