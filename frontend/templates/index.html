@@ -31,11 +31,23 @@
         <script src="/static/vendor/jquery/jquery-latest.js"></script>
         <script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
         <script>
-            setInterval(function(){
-                $.ajax({ url: "/_json", success: function(data){
-                    $('#now').text(data.now);
-                }, dataType: "json"});
-            }, 1000);
+            // polling, ref: http://stackoverflow.com/questions/333664/simple-long-polling-example-code
+            (function poll(){
+                var call_interval = 250;
+                $.ajax({
+                    url: "/_json",
+                    dataType: "json",
+                    timeout: 300,
+
+                    success: function(data){
+                        $('#now').text(data.now);
+                        setTimeout(poll, call_interval);
+                    },
+                    error: function(){
+                        setTimeout(poll, call_interval);
+                    }
+                });
+            })();
         </script>
     </body>
 </html>

@@ -34,7 +34,7 @@ class Root(resource.Resource):
         resource.Resource.__init__(self)
 
         self.putChild('', Home(self))
-        self.putChild('_json', JsonView())
+        self.putChild('_json', JsonView(self))
 
         fp = os.path.join(get_package_path(), 'static')
         self.putChild('static', static.File(fp))
@@ -60,7 +60,12 @@ class Home(resource.Resource):
         ))
 
 class JsonView(resource.Resource):
+    def __init__(self, root):
+        self.root = root
+
     def render_GET(self, request):
+        self.root.hits += 1
+
         from datetime import datetime
         import json
         dct = {
