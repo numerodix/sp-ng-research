@@ -42,50 +42,33 @@ class Crawler(object):
 
         level = qurl.level + 1
 
-        for elem in soup.find_all('a'):
-            url = elem.get('href')
+        def enqueue(url, context):
             self.enqueue_new(qurl, {
                 'parent_url': qurl.url,
                 'url': self.urljoin(qurl.url, url),
-                'context': 'anchor',
+                'context': context,
                 'level': level,
             })
+
+        for elem in soup.find_all('a'):
+            url = elem.get('href')
+            enqueue(url, 'anchor')
 
         for elem in soup.find_all('link'):
             url = elem.get('href')
-            self.enqueue_new(qurl, {
-                'parent_url': qurl.url,
-                'url': self.urljoin(qurl.url, url),
-                'context': 'link',
-                'level': level,
-            })
+            enqueue(url, 'link')
 
         for elem in soup.find_all('script'):
             url = elem.get('src')
-            self.enqueue_new(qurl, {
-                'parent_url': qurl.url,
-                'url': self.urljoin(qurl.url, url),
-                'context': 'script',
-                'level': level,
-            })
+            enqueue(url, 'script')
 
         for elem in soup.find_all('img'):
             url = elem.get('src')
-            self.enqueue_new(qurl, {
-                'parent_url': qurl.url,
-                'url': self.urljoin(qurl.url, url),
-                'context': 'img',
-                'level': level,
-            })
+            enqueue(url, 'img')
 
         for elem in soup.find_all('iframe'):
             url = elem.get('src')
-            self.enqueue_new(qurl, {
-                'parent_url': qurl.url,
-                'url': self.urljoin(qurl.url, url),
-                'context': 'iframe',
-                'level': level,
-            })
+            enqueue(url, 'iframe')
 
     def enqueue_new(self, parent, dct):
         url = dct.get('url')
@@ -95,6 +78,7 @@ class Crawler(object):
             return
         if url == 'None':
             return
+        # improve match to: by top level domain
         if not (url.startswith(self.host) or url.startswith(self.host.replace('www.', ''))):
             return
         if parent and url == parent.url:
