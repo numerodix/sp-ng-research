@@ -27,7 +27,7 @@ def urljoin(url, path):
     if path:
         if not path.startswith('http'):
             url_new = urlparse.urljoin(url, path)
-            url_new = re.sub('../', '', url_new)
+            url_new = re.sub('[.]{2}\/', '', url_new)
     return url_new
 
 def spider(qurl, content):
@@ -83,7 +83,13 @@ def spider(qurl, content):
 
 def enqueue_new(parent, dct):
     url = dct.get('url')
-    if url and not url.startswith(HOST):
+    #logger.info('Enqueuing: %s' % url)
+
+    if not url:
+        return
+    if url == 'None':
+        return
+    if not url.startswith(HOST):
         return
     if parent and url == parent.url:
         return
