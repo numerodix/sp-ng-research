@@ -15,6 +15,7 @@ class Url(db.Model):
     url = db.Column(db.String)
     hash = db.Column(db.String)
     level = db.Column(db.Integer)
+    context = db.Column(db.String)
 
     parent_id = db.Column(db.Integer, db.ForeignKey('url.id'))
     children = db.relationship(
