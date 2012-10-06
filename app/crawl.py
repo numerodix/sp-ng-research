@@ -9,6 +9,7 @@ sh.setFormatter(fmt)
 logger.addHandler(sh)
 
 import os
+import re
 import urlparse
 
 from bs4 import BeautifulSoup
@@ -22,13 +23,10 @@ from models import Url
 
 def urljoin(url, path):
     url_new = path
-    if path and not path.startswith('http'):
-        if path.startswith('/'):
-            st = urlparse.urlparse(url)
-            url_new = '%s://%s%s' % (st.scheme, st.netloc, path)
-        else:
-            base = os.path.dirname(url)
-            url_new = '%s/%s' % (base, path)
+    if path:
+        if not path.startswith('http'):
+            url_new = urlparse.urljoin(url, path)
+            url_new = re.sub('../', '', url_new)
     return url_new
 
 def spider(qurl, content):
