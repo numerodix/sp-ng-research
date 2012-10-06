@@ -70,6 +70,10 @@ class Crawler(object):
             url = elem.get('src')
             enqueue(url, 'iframe')
 
+        for elem in soup.find_all('embed'):
+            url = elem.get('src')
+            enqueue(url, 'embed')
+
     def enqueue_new(self, parent, dct):
         url = dct.get('url')
         #logger.info('Enqueuing: %s' % url)
