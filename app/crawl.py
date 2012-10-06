@@ -83,14 +83,18 @@ def spider(qurl, content):
 
 def enqueue_new(parent, dct):
     url = dct.get('url')
-    if url and url.startswith(HOST):
-        if not url == parent.url:
-            if (not QueuedUrl.query.filter(QueuedUrl.url == url).first()
-                and (not Url.query.filter(Url.url == url).first())):
-                qurl = QueuedUrl(**dct)
-                db.session.add(qurl)
-                db.session.commit()
-                logger.info('Enqueued: %s' % qurl)
+    if url and not url.startswith(HOST):
+        return
+    if parent and url == parent.url:
+        return
+    if (QueuedUrl.query.filter(QueuedUrl.url == url).first()
+        or Url.query.filter(Url.url == url).first()):
+        return
+
+    qurl = QueuedUrl(**dct)
+    db.session.add(qurl)
+    db.session.commit()
+    logger.info('Enqueued: %s' % qurl)
 
 def dequeue_next():
     qurl = QueuedUrl.query.first()
@@ -146,7 +150,7 @@ if __name__ == '__main__':
     logger.info('Creating models')
     db.create_all()
 
-    enqueue_new(dict(url=HOST, level=0, context='anchor'))
+    enqueue_new(None, dict(url=HOST, level=0, context='anchor'))
 
     logger.info('Starting main()')
     main()
