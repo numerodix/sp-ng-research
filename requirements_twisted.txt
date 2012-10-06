@@ -3,11 +3,14 @@
 lxml  # for beautifulsoup: improved performance & parsing capability
 beautifulsoup4  # beautifulsoup
 
-SQLAlchemy  # disable: does not play super well with Twisted
+#SQLAlchemy  # disable: does not play super well with Twisted
+
+psycopg2>=2.2.0  # used by txpostgres
+txpostgres  # postgres for twisted
+
+Twisted
 
 MarkupSafe  # autoescaping for jinja
 Jinja2  # jinja templates
 
-gevent
-grequests  # requests over gevent
-requests  # http requests library
+pep8  # coding style check
