@@ -8,6 +8,9 @@ fmt = logging.Formatter('%(asctime)s %(message)s')
 sh.setFormatter(fmt)
 logger.addHandler(sh)
 
+import os
+import urlparse
+
 from bs4 import BeautifulSoup
 import requests
 
@@ -15,6 +18,17 @@ from models import db
 from models import QueuedUrl
 from models import Url
 
+
+def urljoin(url, path):
+    url_new = path
+    if path and not path.startswith('http'):
+        if path.startswith('/'):
+            st = urlparse.urlparse(url)
+            url_new = '%s://%s%s' % (st.scheme, st.netloc, path)
+        else:
+            base = os.path.dirname(url)
+            url_new = '%s/%s' % (base, path)
+    return url_new
 
 def spider(qurl, content):
     logger.info('Spidering: %s' % qurl)
@@ -26,7 +40,7 @@ def spider(qurl, content):
         url = elem.get('href')
         enqueue_new({
             'parent_url': qurl.url,
-            'url': url,
+            'url': urljoin(qurl.url, url),
             'context': 'anchor',
             'level': level,
         })
@@ -35,7 +49,7 @@ def spider(qurl, content):
         url = elem.get('href')
         enqueue_new({
             'parent_url': qurl.url,
-            'url': url,
+            'url': urljoin(qurl.url, url),
             'context': 'link',
             'level': level,
         })
@@ -44,7 +58,7 @@ def spider(qurl, content):
         url = elem.get('src')
         enqueue_new({
             'parent_url': qurl.url,
-            'url': url,
+            'url': urljoin(qurl.url, url),
             'context': 'script',
             'level': level,
         })
@@ -53,7 +67,7 @@ def spider(qurl, content):
         url = elem.get('src')
         enqueue_new({
             'parent_url': qurl.url,
-            'url': url,
+            'url': urljoin(qurl.url, url),
             'context': 'img',
             'level': level,
         })
@@ -62,15 +76,18 @@ def spider(qurl, content):
         url = elem.get('src')
         enqueue_new({
             'parent_url': qurl.url,
-            'url': url,
+            'url': urljoin(qurl.url, url),
             'context': 'iframe',
             'level': level,
         })
 
 def enqueue_new(dct):
-    qurl = QueuedUrl(**dct)
-    db.session.add(qurl)
-    db.session.commit()
+    url = dct.get('url')
+    if url and url.startswith('http://www.juventuz.net'):
+        qurl = QueuedUrl(**dct)
+        db.session.add(qurl)
+        db.session.commit()
+        logger.info('Enqueued: %s' % qurl)
 
 def dequeue_next():
     qurl = QueuedUrl.query.first()
@@ -96,27 +113,28 @@ def store_url(qurl, status_code):
     )
     db.session.add(url)
     db.session.commit()
+    logger.info('Stored: %s' % url)
 
 def main():
     qurl = dequeue_next()
     while qurl:
-        logger.info('Fetching: %s' % qurl)
-        r = requests.get(qurl.url)
-        content = r.text
+        if qurl.context == 'anchor':
+            logger.info('Fetching: %s' % qurl)
+            r = requests.get(qurl.url)
+            content = r.text
 
-        spider(qurl, content)
-        store_url(qurl, r.status_code)
+            spider(qurl, content)
+            store_url(qurl, r.status_code)
 
         qurl = dequeue_next()
 
 
 if __name__ == '__main__':
-    import os
     if os.path.isfile('store.sqlite'):
         os.unlink('store.sqlite')
 
     db.create_all()
-    qurl = QueuedUrl(url='http://www.juventuz.net', level=0)
+    qurl = QueuedUrl(url='http://www.juventuz.net', level=0, context='anchor')
     db.session.add(qurl)
     db.session.commit()
 
