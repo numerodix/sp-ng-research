@@ -10,6 +10,7 @@ logger.addHandler(sh)
 
 import os
 import re
+import sys
 import urlparse
 
 from bs4 import BeautifulSoup
@@ -20,131 +21,137 @@ from models import db
 from models import QueuedUrl
 from models import Url
 
-HOST = 'http://www.juventuz.net'
 
-def urljoin(url, path):
-    url_new = path
-    if path:
-        if not path.startswith('http'):
-            url_new = urlparse.urljoin(url, path)
-            url_new = re.sub('#.*$', '', url_new)  # remove fragment
-            url_new = re.sub('[.]{2}\/', '', url_new)
-    return url_new
+class Crawler(object):
+    def __init__(self, host):
+        self.host = host
+        self.enqueue_new(None, dict(url=self.host, level=0, context='anchor'))
 
-def spider(qurl, content):
-    logger.info('Spidering: %s' % qurl)
-    soup = BeautifulSoup(content)
+    def urljoin(self, url, path):
+        url_new = path
+        if path:
+            if not path.startswith('http'):
+                url_new = urlparse.urljoin(url, path)
+                url_new = re.sub('#.*$', '', url_new)  # remove fragment
+                url_new = re.sub('[.]{2}\/', '', url_new)
+        return url_new
 
-    level = qurl.level + 1
+    def spider(self, qurl, content):
+        logger.info('Spidering: %s' % qurl)
+        soup = BeautifulSoup(content)
 
-    for elem in soup.find_all('a'):
-        url = elem.get('href')
-        enqueue_new(qurl, {
-            'parent_url': qurl.url,
-            'url': urljoin(qurl.url, url),
-            'context': 'anchor',
-            'level': level,
-        })
+        level = qurl.level + 1
 
-    for elem in soup.find_all('link'):
-        url = elem.get('href')
-        enqueue_new(qurl, {
-            'parent_url': qurl.url,
-            'url': urljoin(qurl.url, url),
-            'context': 'link',
-            'level': level,
-        })
+        for elem in soup.find_all('a'):
+            url = elem.get('href')
+            self.enqueue_new(qurl, {
+                'parent_url': qurl.url,
+                'url': self.urljoin(qurl.url, url),
+                'context': 'anchor',
+                'level': level,
+            })
 
-    for elem in soup.find_all('script'):
-        url = elem.get('src')
-        enqueue_new(qurl, {
-            'parent_url': qurl.url,
-            'url': urljoin(qurl.url, url),
-            'context': 'script',
-            'level': level,
-        })
+        for elem in soup.find_all('link'):
+            url = elem.get('href')
+            self.enqueue_new(qurl, {
+                'parent_url': qurl.url,
+                'url': self.urljoin(qurl.url, url),
+                'context': 'link',
+                'level': level,
+            })
 
-    for elem in soup.find_all('img'):
-        url = elem.get('src')
-        enqueue_new(qurl, {
-            'parent_url': qurl.url,
-            'url': urljoin(qurl.url, url),
-            'context': 'img',
-            'level': level,
-        })
+        for elem in soup.find_all('script'):
+            url = elem.get('src')
+            self.enqueue_new(qurl, {
+                'parent_url': qurl.url,
+                'url': self.urljoin(qurl.url, url),
+                'context': 'script',
+                'level': level,
+            })
 
-    for elem in soup.find_all('iframe'):
-        url = elem.get('src')
-        enqueue_new(qurl, {
-            'parent_url': qurl.url,
-            'url': urljoin(qurl.url, url),
-            'context': 'iframe',
-            'level': level,
-        })
+        for elem in soup.find_all('img'):
+            url = elem.get('src')
+            self.enqueue_new(qurl, {
+                'parent_url': qurl.url,
+                'url': self.urljoin(qurl.url, url),
+                'context': 'img',
+                'level': level,
+            })
 
-def enqueue_new(parent, dct):
-    url = dct.get('url')
-    #logger.info('Enqueuing: %s' % url)
+        for elem in soup.find_all('iframe'):
+            url = elem.get('src')
+            self.enqueue_new(qurl, {
+                'parent_url': qurl.url,
+                'url': self.urljoin(qurl.url, url),
+                'context': 'iframe',
+                'level': level,
+            })
 
-    if not url:
-        return
-    if url == 'None':
-        return
-    if not url.startswith(HOST):
-        return
-    if parent and url == parent.url:
-        return
-    if (QueuedUrl.query.filter(QueuedUrl.url == url).first()
-        or Url.query.filter(Url.url == url).first()):
-        return
+    def enqueue_new(self, parent, dct):
+        url = dct.get('url')
+        #logger.info('Enqueuing: %s' % url)
 
-    qurl = QueuedUrl(**dct)
-    db.session.add(qurl)
-    db.session.commit()
-    logger.info('Enqueued: %s' % qurl)
+        if not url:
+            return
+        if url == 'None':
+            return
+        if not (url.startswith(self.host) or url.startswith(self.host.replace('www.', ''))):
+            return
+        if parent and url == parent.url:
+            return
+        if (QueuedUrl.query.filter(QueuedUrl.url == url).first()
+            or Url.query.filter(Url.url == url).first()):
+            return
 
-def dequeue_next():
-    qurl = QueuedUrl.query.first()
-    if qurl:
-        logger.info('Dequeued: %s' % qurl)
-        QueuedUrl.query.filter(QueuedUrl.id == qurl.id).delete()
+        qurl = QueuedUrl(**dct)
+        db.session.add(qurl)
         db.session.commit()
-        return qurl
+        logger.info('Enqueued: %s' % qurl)
 
-def store_url(qurl, status_code):
-    logger.info('Storing: %s' % qurl)
+    def dequeue_next(self):
+        qurl = QueuedUrl.query.first()
+        if qurl:
+            logger.info('Dequeued: %s' % qurl)
+            QueuedUrl.query.filter(QueuedUrl.id == qurl.id).delete()
+            db.session.commit()
+            return qurl
 
-    parent = None
-    if qurl.parent_url:
-        parent = Url.query.filter(Url.url == qurl.parent_url).first()
+    def store_url(self, qurl, status_code):
+        logger.info('Storing: %s' % qurl)
 
-    url = Url(
-        url=qurl.url,
-        level=qurl.level,
-        context=qurl.context,
-        status_code=status_code,
-        parent=parent,
-    )
-    db.session.add(url)
-    db.session.commit()
-    logger.info('Stored: %s' % url)
+        parent = None
+        if qurl.parent_url:
+            parent = Url.query.filter(Url.url == qurl.parent_url).first()
 
-def main():
-    qurl = dequeue_next()
-    while qurl:
-        if qurl.context == 'anchor':
-            logger.info('Fetching: %s' % qurl)
-            r = requests.get(qurl.url)
-            content = r.text
+        url = Url(
+            url=qurl.url,
+            level=qurl.level,
+            context=qurl.context,
+            status_code=status_code,
+            parent=parent,
+        )
+        db.session.add(url)
+        db.session.commit()
+        logger.info('Stored: %s' % url)
 
-            spider(qurl, content)
+    def main(self):
+        qurl = self.dequeue_next()
+        while qurl:
+            if qurl.context == 'anchor':
+                logger.info('Fetching: %s' % qurl)
+                r = requests.get(qurl.url)
+                content = r.text
 
-        store_url(qurl, r.status_code)
+                self.spider(qurl, content)
 
-        qurl = dequeue_next()
+            self.store_url(qurl, r.status_code)
+
+            qurl = self.dequeue_next()
 
 
 if __name__ == '__main__':
+    host = sys.argv[1]
+
     logger.info('Preparing datastore')
     db_driver = app.config['SQLALCHEMY_DATABASE_URI']
     if db_driver.startswith('sqlite'):
@@ -158,7 +165,6 @@ if __name__ == '__main__':
     logger.info('Creating models')
     db.create_all()
 
-    enqueue_new(None, dict(url=HOST, level=0, context='anchor'))
-
     logger.info('Starting main()')
-    main()
+    crawler = Crawler(host)
+    crawler.main()
