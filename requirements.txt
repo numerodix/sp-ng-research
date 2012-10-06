@@ -11,3 +11,12 @@ Jinja2  # jinja templates
 gevent
 grequests  # requests over gevent
 requests  # http requests library
+
+# graph stuff:
+# networkx (python lib, in memory)
+# dbs:
+# neo4j (on disk)
+# flockdb (horizontal scaling, data in mysql)
+
+Flask
+Flask-SQLAlchemy
