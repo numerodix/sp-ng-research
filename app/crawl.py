@@ -14,6 +14,7 @@ import urlparse
 from bs4 import BeautifulSoup
 import requests
 
+from models import app
 from models import db
 from models import QueuedUrl
 from models import Url
@@ -84,10 +85,12 @@ def spider(qurl, content):
 def enqueue_new(dct):
     url = dct.get('url')
     if url and url.startswith('http://www.juventuz.net'):
-        qurl = QueuedUrl(**dct)
-        db.session.add(qurl)
-        db.session.commit()
-        logger.info('Enqueued: %s' % qurl)
+        if (not QueuedUrl.query.filter(QueuedUrl.url == url).first()
+            and (not Url.query.filter(Url.url == url).first())):
+            qurl = QueuedUrl(**dct)
+            db.session.add(qurl)
+            db.session.commit()
+            logger.info('Enqueued: %s' % qurl)
 
 def dequeue_next():
     qurl = QueuedUrl.query.first()
@@ -124,18 +127,26 @@ def main():
             content = r.text
 
             spider(qurl, content)
-            store_url(qurl, r.status_code)
+
+        store_url(qurl, r.status_code)
 
         qurl = dequeue_next()
 
 
 if __name__ == '__main__':
-    if os.path.isfile('store.sqlite'):
-        os.unlink('store.sqlite')
+    logger.info('Preparing datastore')
+    db_driver = app.config['SQLALCHEMY_DATABASE_URI']
+    if db_driver.startswith('sqlite'):
+        if os.path.isfile('store.sqlite'):
+            os.unlink('store.sqlite')
+    elif db_driver.startswith('postgresql'):
+        os.system('dropdb crawl')
+        os.system('createdb crawl')
 
+    logger.info('Creating models')
     db.create_all()
-    qurl = QueuedUrl(url='http://www.juventuz.net', level=0, context='anchor')
-    db.session.add(qurl)
-    db.session.commit()
 
+    enqueue_new(dict(url='http://www.juventuz.net', level=0, context='anchor'))
+
+    logger.info('Starting main()')
     main()
