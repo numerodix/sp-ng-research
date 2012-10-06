@@ -56,7 +56,7 @@ def main():
 
     db.session.commit()
 
-    for url in db.session.query(Url).filter(Url.level == 1):
+    for url in Url.query.filter(Url.level == 1):
         print url
         for i, ch in enumerate(url.children, 1):
             print ' ', i, ch
