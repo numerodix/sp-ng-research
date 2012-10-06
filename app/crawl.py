@@ -151,6 +151,7 @@ if __name__ == '__main__':
         if os.path.isfile('store.sqlite'):
             os.unlink('store.sqlite')
     elif db_driver.startswith('postgresql'):
+        os.system('sudo /etc/init.d/postgresql restart')
         os.system('dropdb crawl')
         os.system('createdb crawl')
 
