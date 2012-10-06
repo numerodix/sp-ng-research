@@ -20,6 +20,7 @@ from models import db
 from models import QueuedUrl
 from models import Url
 
+HOST = 'http://www.juventuz.net'
 
 def urljoin(url, path):
     url_new = path
@@ -37,7 +38,7 @@ def spider(qurl, content):
 
     for elem in soup.find_all('a'):
         url = elem.get('href')
-        enqueue_new({
+        enqueue_new(qurl, {
             'parent_url': qurl.url,
             'url': urljoin(qurl.url, url),
             'context': 'anchor',
@@ -46,7 +47,7 @@ def spider(qurl, content):
 
     for elem in soup.find_all('link'):
         url = elem.get('href')
-        enqueue_new({
+        enqueue_new(qurl, {
             'parent_url': qurl.url,
             'url': urljoin(qurl.url, url),
             'context': 'link',
@@ -55,7 +56,7 @@ def spider(qurl, content):
 
     for elem in soup.find_all('script'):
         url = elem.get('src')
-        enqueue_new({
+        enqueue_new(qurl, {
             'parent_url': qurl.url,
             'url': urljoin(qurl.url, url),
             'context': 'script',
@@ -64,7 +65,7 @@ def spider(qurl, content):
 
     for elem in soup.find_all('img'):
         url = elem.get('src')
-        enqueue_new({
+        enqueue_new(qurl, {
             'parent_url': qurl.url,
             'url': urljoin(qurl.url, url),
             'context': 'img',
@@ -73,22 +74,23 @@ def spider(qurl, content):
 
     for elem in soup.find_all('iframe'):
         url = elem.get('src')
-        enqueue_new({
+        enqueue_new(qurl, {
             'parent_url': qurl.url,
             'url': urljoin(qurl.url, url),
             'context': 'iframe',
             'level': level,
         })
 
-def enqueue_new(dct):
+def enqueue_new(parent, dct):
     url = dct.get('url')
-    if url and url.startswith('http://www.juventuz.net'):
-        if (not QueuedUrl.query.filter(QueuedUrl.url == url).first()
-            and (not Url.query.filter(Url.url == url).first())):
-            qurl = QueuedUrl(**dct)
-            db.session.add(qurl)
-            db.session.commit()
-            logger.info('Enqueued: %s' % qurl)
+    if url and url.startswith(HOST):
+        if not url == parent.url:
+            if (not QueuedUrl.query.filter(QueuedUrl.url == url).first()
+                and (not Url.query.filter(Url.url == url).first())):
+                qurl = QueuedUrl(**dct)
+                db.session.add(qurl)
+                db.session.commit()
+                logger.info('Enqueued: %s' % qurl)
 
 def dequeue_next():
     qurl = QueuedUrl.query.first()
@@ -144,7 +146,7 @@ if __name__ == '__main__':
     logger.info('Creating models')
     db.create_all()
 
-    enqueue_new(dict(url='http://www.juventuz.net', level=0, context='anchor'))
+    enqueue_new(dict(url=HOST, level=0, context='anchor'))
 
     logger.info('Starting main()')
     main()
