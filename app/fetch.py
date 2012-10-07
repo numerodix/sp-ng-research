@@ -97,6 +97,9 @@ class Request(object):
         shutil.move(self.tempfile, target_path)
         self.cleanup_tempfile()
 
+        # fire stored-file callback
+        self.fetcher.stored_file(self, target_path)
+
     @property
     def content_length(self):
         try:
@@ -193,6 +196,9 @@ class Fetcher(object):
 
     def receive_aborted(self, request):
         logger.debug('Aborted fetch: %s' % request.url)
+
+    def stored_file(self, request, target_path):
+        logger.debug('Stored file: %s: %s' % (target_path, request.url))
 
 
 if __name__ == '__main__':
