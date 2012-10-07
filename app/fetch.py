@@ -1,5 +1,6 @@
 import os
 import pprint
+import re
 import shutil
 import tempfile
 import threading
@@ -11,6 +12,19 @@ logger = logutils.getLogger('fetch')
 
 
 shutdown_event = threading.Event()
+
+def get_target_path(url):
+    target_path = os.path.basename(url) or 'index.html'
+    while os.path.exists(target_path):
+        try:
+            root, seq = re.findall('^(.*)\.([0-9]+)$', target_path)[0]
+            seq = int(seq)
+        except IndexError:
+            root = target_path
+            seq = 0
+        seq += 1
+        target_path = '%s.%s' % (root, seq)
+    return target_path
 
 class Request(object):
     def __init__(self, fetcher, url, chunk_size=10240, keep_file=False):
@@ -78,7 +92,7 @@ class Request(object):
             os.write(self.fd, data)
 
     def store_file(self):
-        target_path = os.path.basename(self.url) or 'index.html'
+        target_path = get_target_path(self.url)
         shutil.move(self.tempfile, target_path)
         self.cleanup_tempfile()
 
