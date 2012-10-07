@@ -80,8 +80,10 @@ class Request(object):
                 self.fetcher.receive_aborted(self)
                 break
 
-        # move the data from a tempfile to a target path
-        self.store_file()
+        # if we have not been aborted, move the data from a tempfile
+        # to a target path
+        if self.runnable:
+            self.store_file()
 
     def allocate_tempfile(self):
         if self.keep_file:  # noop if option is disabled
@@ -98,7 +100,7 @@ class Request(object):
             os.write(self.fd, data)
 
     def store_file(self):
-        if self.runnable:  # noop if option is disabled
+        if self.keep_file:  # noop if option is disabled
             target_path = get_target_path(self.url)
             shutil.move(self.tempfile, target_path)
             self.cleanup_tempfile()
