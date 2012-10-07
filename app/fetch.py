@@ -1,4 +1,5 @@
 import pprint
+import threading
 
 import requests
 
@@ -65,9 +66,24 @@ class Fetcher(object):
         }
         self.session = requests.session(headers=self.request_headers)
 
-    def fetch(self, url):
+    def fetch(self, urls):
+        pass
+
+    def fetch_single(self, urls):
+        url = urls[0]
         request = Request(self, url)
-        request.fetch()
+        target=request.fetch()
+
+    def fetch_threaded(self, urls):
+        threads = []
+        for url in urls:
+            request = Request(self, url)
+            t = threading.Thread(target=request.fetch)
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
 
     # Callbacks
 
@@ -101,4 +117,4 @@ class Fetcher(object):
 if __name__ == '__main__':
     import sys
     f = Fetcher()
-    f.fetch(sys.argv[1])
+    f.fetch(sys.argv[1:])
