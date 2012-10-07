@@ -8,6 +8,7 @@ SQLAlchemy  # disable: does not play super well with Twisted
 MarkupSafe  # autoescaping for jinja
 Jinja2  # jinja templates
 
+chardet  # used by requests to detect encoding
 gevent
 grequests  # requests over gevent
 requests  # http requests library
