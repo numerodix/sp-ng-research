@@ -21,3 +21,5 @@ requests  # http requests library
 
 Flask
 Flask-SQLAlchemy
+
+pyzmq  # zeromq
