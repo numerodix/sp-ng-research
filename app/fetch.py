@@ -43,6 +43,13 @@ class Request(object):
         self.runnable = True
 
     def fetch(self):
+        try:
+            self.unsafe_fetch()
+        except:
+            self.cleanup_tempfile()
+            raise
+
+    def unsafe_fetch(self):
         # allocate a tempfile
         self.allocate_tempfile()
 
