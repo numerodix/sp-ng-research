@@ -6,7 +6,6 @@ import sys
 import urlparse
 
 from bs4 import BeautifulSoup
-import requests
 
 from models import app
 from models import db
@@ -15,19 +14,6 @@ from models import Url
 
 import logutils
 logger = logutils.getLogger('crawl')
-
-
-class Fetcher(object):
-    def __init__(self, url):
-        self.url = url
-        self.request = None
-
-    def fetch(self):
-        return
-        self.request = requests.Request(url=self.url)
-
-    def get_content(self):
-        pass
 
 
 class Crawler(object):
