@@ -14,6 +14,7 @@ logger = logutils.getLogger('fetch')
 shutdown_event = threading.Event()
 
 def get_target_path(url):
+    """Wget's algorithm"""
     target_path = os.path.basename(url) or 'index.html'
     while os.path.exists(target_path):
         try:
