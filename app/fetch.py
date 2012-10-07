@@ -92,7 +92,9 @@ class Fetcher(object):
         if request.content_percent:
             msg_percent = ' %.1f%%' % request.content_percent
 
-        msg = 'Received %s%s byte(s)%s' % (request.data_length, msg_progress, msg_percent)
+        msg = ('Received %s%s byte(s)%s: %s' %
+               (request.data_length, msg_progress, msg_percent, request.url))
+
         logger.debug(msg)
 
 
