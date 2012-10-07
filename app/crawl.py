@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 
-import logging
-logger = logging.getLogger('crawl')
-logger.setLevel(logging.DEBUG)
-sh = logging.StreamHandler()
-fmt = logging.Formatter('%(asctime)s %(message)s')
-sh.setFormatter(fmt)
-logger.addHandler(sh)
-
 import os
 import re
 import sys
@@ -20,6 +12,22 @@ from models import app
 from models import db
 from models import QueuedUrl
 from models import Url
+
+import logutils
+logger = logutils.getLogger('crawl')
+
+
+class Fetcher(object):
+    def __init__(self, url):
+        self.url = url
+        self.request = None
+
+    def fetch(self):
+        return
+        self.request = requests.Request(url=self.url)
+
+    def get_content(self):
+        pass
 
 
 class Crawler(object):
@@ -127,12 +135,12 @@ class Crawler(object):
         while qurl:
             if qurl.context == 'anchor':
                 logger.info('Fetching: %s' % qurl)
-                r = requests.get(qurl.url)
-                content = r.text
+                fetcher = Fetcher(qurl.url)
+                content = fetcher.get_content()
 
                 self.spider(qurl, content)
 
-            self.store_url(qurl, r.status_code)
+            self.store_url(qurl, status_code)
 
             qurl = self.dequeue_next()
 
