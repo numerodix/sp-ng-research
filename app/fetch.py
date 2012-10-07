@@ -98,7 +98,7 @@ class Request(object):
             os.write(self.fd, data)
 
     def store_file(self):
-        if self.runnable:
+        if self.runnable:  # noop if option is disabled
             target_path = get_target_path(self.url)
             shutil.move(self.tempfile, target_path)
             self.cleanup_tempfile()
