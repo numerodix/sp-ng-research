@@ -7,12 +7,13 @@ logger = logutils.getLogger('fetch')
 
 
 class Request(object):
-    def __init__(self, fetcher, url):
+    def __init__(self, fetcher, url, chunk_size=10240):
         self.fetcher = fetcher
         self.session = self.fetcher.session
         self.url = url
-        self.chunk_size = 1024
+        self.chunk_size = chunk_size
 
+        self.response = None
         self.data_length = 0
 
     def fetch(self):
@@ -39,12 +40,12 @@ class Request(object):
 
     @property
     def content_type(self):
-        if self.response:
+        if not self.response is None:
             return self.response.headers.get('content-type')
 
     @property
     def status_code(self):
-        if self.response:
+        if not self.response is None:
             return self.response.status_code
 
 
