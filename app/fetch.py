@@ -43,9 +43,8 @@ class Request(object):
         self.runnable = True
 
     def fetch(self):
-        # allocate a tempfile if we need to keep the file
-        if self.keep_file:
-            self.allocate_tempfile()
+        # allocate a tempfile
+        self.allocate_tempfile()
 
         # fire pre-fetch callback
         self.fetcher.pre_fetch(self)
@@ -80,7 +79,8 @@ class Request(object):
             self.store_file()
 
     def allocate_tempfile(self):
-        self.fd, self.tempfile = tempfile.mkstemp(suffix='.partial', prefix='fetch_')
+        if self.keep_file:  # noop if option is disabled
+            self.fd, self.tempfile = tempfile.mkstemp(suffix='.partial', prefix='fetch_')
 
     def cleanup_tempfile(self):
         if self.fd:
