@@ -208,5 +208,8 @@ if __name__ == '__main__':
                       help="Store the download in a file")
     (options, args) = parser.parse_args()
 
+    if not args:
+        print("No urls given")
+
     f = Fetcher()
     f.fetch(args, keep_file=options.keep)
