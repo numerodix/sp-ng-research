@@ -1,4 +1,7 @@
+import os
 import pprint
+import shutil
+import tempfile
 import threading
 
 import requests
@@ -10,32 +13,74 @@ logger = logutils.getLogger('fetch')
 shutdown_event = threading.Event()
 
 class Request(object):
-    def __init__(self, fetcher, url, chunk_size=10240):
+    def __init__(self, fetcher, url, chunk_size=10240, keep_file=False):
         self.fetcher = fetcher
         self.session = self.fetcher.session
         self.url = url
         self.chunk_size = chunk_size
+
+        self.keep_file = keep_file
+        self.fd = None
+        self.tempfile = None
 
         self.response = None
         self.data_length = 0
         self.runnable = True
 
     def fetch(self):
+        # allocate a tempfile if we need to keep the file
+        if self.keep_file:
+            self.allocate_tempfile()
+
+        # fire pre-fetch callback
         self.fetcher.pre_fetch(self)
 
+        # establish connection and fetch headers, then fire callback
         self.response = self.session.get(self.url, prefetch=False)
         self.fetcher.received_headers(self)
 
+        # start receiving the body
         for data in self.response.iter_content(chunk_size=self.chunk_size):
+            # update data cursor and store the chunk
             self.data_length += len(data)
+            self.write_chunk(data)
+
+            # fire received-data callback
             self.fetcher.received_data(self, data)
 
+            # detect if the thread has been signalled to exit
             if shutdown_event.is_set():
                 self.runnable = False
 
+            # are we shutting down?
             if not self.runnable:
+                # clean up tempfile and fire receive-aborted callback
+                self.cleanup_tempfile()
                 self.fetcher.receive_aborted(self)
                 break
+
+        # if we have not been aborted, move the data from a tempfile
+        # to a target path
+        if self.runnable:
+            self.store_file()
+
+    def allocate_tempfile(self):
+        self.fd, self.tempfile = tempfile.mkstemp(suffix='.partial', prefix='fetch_')
+
+    def cleanup_tempfile(self):
+        if self.fd:
+            os.close(self.fd)
+        if self.tempfile and os.path.isfile(self.tempfile):
+            os.unlink(self.tempfile)
+
+    def write_chunk(self, data):
+        if self.fd:  # noop if we have no file descriptor
+            os.write(self.fd, data)
+
+    def store_file(self):
+        target_path = os.path.basename(self.url) or 'index.html'
+        shutil.move(self.tempfile, target_path)
+        self.cleanup_tempfile()
 
     @property
     def content_length(self):
@@ -70,24 +115,24 @@ class Fetcher(object):
         'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
     ]
 
-    def __init__(self):
+    def __init__(self, keep_file=False):
         self.request_headers = {
             'User-Agent': self.user_agents[0]
         }
         self.session = requests.session(headers=self.request_headers)
 
-    def fetch(self, urls):
-        self.fetch_threaded(urls)
+    def fetch(self, urls, keep_file):
+        self.fetch_threaded(urls, keep_file)
 
-    def fetch_single(self, urls):
+    def fetch_single(self, urls, keep_file):
         url = urls[0]
-        request = Request(self, url)
+        request = Request(self, url, keep_file=keep_file)
         request.fetch()
 
-    def fetch_threaded(self, urls):
+    def fetch_threaded(self, urls, keep_file):
         threads = []
         for url in urls:
-            request = Request(self, url)
+            request = Request(self, url, keep_file=keep_file)
             t = threading.Thread(target=request.fetch)
             threads.append(t)
             t.start()
@@ -136,6 +181,11 @@ class Fetcher(object):
 
 
 if __name__ == '__main__':
-    import sys
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("", "--keep", action="store_true",
+                      help="Store the download in a file")
+    (options, args) = parser.parse_args()
+
     f = Fetcher()
-    f.fetch(sys.argv[1:])
+    f.fetch(args, keep_file=options.keep)
