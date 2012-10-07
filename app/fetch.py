@@ -7,6 +7,8 @@ import logutils
 logger = logutils.getLogger('fetch')
 
 
+shutdown_event = threading.Event()
+
 class Request(object):
     def __init__(self, fetcher, url, chunk_size=10240):
         self.fetcher = fetcher
@@ -16,6 +18,7 @@ class Request(object):
 
         self.response = None
         self.data_length = 0
+        self.runnable = True
 
     def fetch(self):
         self.fetcher.pre_fetch(self)
@@ -26,6 +29,13 @@ class Request(object):
         for data in self.response.iter_content(chunk_size=self.chunk_size):
             self.data_length += len(data)
             self.fetcher.received_data(self, data)
+
+            if shutdown_event.is_set():
+                self.runnable = False
+
+            if not self.runnable:
+                self.fetcher.receive_aborted(self)
+                break
 
     @property
     def content_length(self):
@@ -67,12 +77,12 @@ class Fetcher(object):
         self.session = requests.session(headers=self.request_headers)
 
     def fetch(self, urls):
-        pass
+        self.fetch_threaded(urls)
 
     def fetch_single(self, urls):
         url = urls[0]
         request = Request(self, url)
-        target=request.fetch()
+        request.fetch()
 
     def fetch_threaded(self, urls):
         threads = []
@@ -82,8 +92,16 @@ class Fetcher(object):
             threads.append(t)
             t.start()
 
-        for t in threads:
-            t.join()
+        alive = threads[:]
+        try:
+            while alive:
+                for t in alive:
+                    if t.is_alive():
+                        t.join(timeout=0.1)
+                    else:
+                        alive.remove(t)
+        except (KeyboardInterrupt, SystemExit):
+            shutdown_event.set()
 
     # Callbacks
 
@@ -112,6 +130,9 @@ class Fetcher(object):
                (request.data_length, msg_progress, msg_percent, request.url))
 
         logger.debug(msg)
+
+    def receive_aborted(self, request):
+        logger.debug('Aborted fetch: %s' % request.url)
 
 
 if __name__ == '__main__':
