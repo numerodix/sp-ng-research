@@ -22,7 +22,7 @@ class WebberDaemon(object):
         self.procs = []
 
     def spawn_fetchers(self, count):
-        for num in xrange(self.num_fetchers):
+        for num in xrange(count):
             p = Process(target=FetchWorker, args=[
                 self.fetch_queue,
                 self.fetch_results,
@@ -31,7 +31,7 @@ class WebberDaemon(object):
             p.start()
 
     def spawn_db_workers(self, count):
-        for num in xrange(1):
+        for num in xrange(count):
             p = Process(target=DbWorker, args=[
                 self.fetch_queue,
                 self.fetch_results,
@@ -42,7 +42,7 @@ class WebberDaemon(object):
 
     def mainloop(self):
         self.spawn_db_workers(1)
-        self.spawn_fetchers(1)
+        self.spawn_fetchers(self.num_fetchers)
 
         try:
             while True:
