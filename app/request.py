@@ -108,7 +108,7 @@ class Request(object):
     def content_length(self):
         try:
             return int(self.response.headers.get('content-length'))
-        except (AttributeError, ValueError):
+        except (AttributeError, TypeError):
             pass
 
     @property
