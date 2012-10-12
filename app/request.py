@@ -34,6 +34,7 @@ class Request(object):
         self.keep_file = keep_file
         self.fd = None
         self.tempfile = None
+        self.target_path = None
 
         self.response = None
         self.data_length = 0
@@ -94,12 +95,12 @@ class Request(object):
 
     def store_file(self):
         if self.keep_file:  # noop if option is disabled
-            target_path = get_target_path(self.url)
-            shutil.move(self.tempfile, target_path)
+            self.target_path = get_target_path(self.url)
+            shutil.move(self.tempfile, self.target_path)
             self.cleanup_tempfile()
 
             # fire stored-file callback
-            self.stored_file(target_path)
+            self.stored_file(self.target_path)
 
     # Convenience properties
 
