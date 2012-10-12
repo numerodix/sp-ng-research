@@ -1,3 +1,4 @@
+import os
 import logging
 
 
@@ -11,6 +12,11 @@ class MultiLineFormatter(logging.Formatter):
         return s
 
 def getLogger(name):
+    if '/' in name:
+        name = os.path.basename(name)
+    if '.' in name:
+        name, _ = os.path.splitext(name)
+
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 

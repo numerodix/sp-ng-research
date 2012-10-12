@@ -14,13 +14,11 @@ class Worker(object):
         self.logger = getLogger(self.ident)
         self.logger.debug("Started")
 
-        self.run()
+        self.mainloop()
 
     def signal_hander(self, signum, frame):
         self.logger.warn("Got signal: %s, shutting down" % signum)
         sys.exit()
 
-    def run(self):
+    def mainloop(self):
         raise NotImplementedError
-
-

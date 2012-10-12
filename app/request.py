@@ -3,12 +3,11 @@ import pprint
 import re
 import shutil
 import tempfile
-import threading
 
 import requests
 
 import logutils
-logger = logutils.getLogger('fetch')
+logger = logutils.getLogger(__file__)
 
 
 def get_target_path(url):
@@ -159,24 +158,3 @@ class Request(object):
 
     def stored_file(self, target_path):
         logger.debug('Stored file: %s: %s' % (target_path, self.url))
-
-
-class Fetcher(object):
-    user_agents = [
-        # chrome/win7
-        'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.66 Safari/535.11',
-        # firefox/win7
-        'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0a2) Gecko/20110613 Firefox/6.0a2',
-        # ie10/win7
-        'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
-    ]
-
-    def __init__(self, keep_file=False):
-        self.request_headers = {
-            'User-Agent': self.user_agents[0]
-        }
-        self.session = requests.session(headers=self.request_headers)
-
-    def fetch(self, url, keep_file=False):
-        request = Request(self, url, keep_file=keep_file)
-        request.fetch()

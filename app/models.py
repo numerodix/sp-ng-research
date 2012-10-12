@@ -8,6 +8,8 @@ class QueuedUrl(db.Model):
     context = db.Column(db.String)
     parent_url = db.Column(db.String)
 
+    processing_status = db.Column(db.String, default='new')
+
     def __repr__(self):
         return ("<QueuedUrl(level %s, '%s')>" %
                 (self.level, self.url))
