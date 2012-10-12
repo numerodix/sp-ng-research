@@ -12,15 +12,17 @@ from fetch_worker import FetchWorker
 
 
 class WebberDaemon(object):
-    def __init__(self, seed_url=None):
+    def __init__(self, seed_url=None, num_fetchers=None):
         self.fetch_results = Queue()
         self.fetch_queue = Queue()
 
         self.seed_url = seed_url
+        self.num_fetchers = num_fetchers or 1
+
         self.procs = []
 
     def spawn_fetchers(self, count):
-        for num in range(1):
+        for num in xrange(self.num_fetchers):
             p = Process(target=FetchWorker, args=[
                 self.fetch_queue,
                 self.fetch_results,
@@ -29,7 +31,7 @@ class WebberDaemon(object):
             p.start()
 
     def spawn_db_workers(self, count):
-        for num in range(1):
+        for num in xrange(1):
             p = Process(target=DbWorker, args=[
                 self.fetch_queue,
                 self.fetch_results,
@@ -58,6 +60,8 @@ class WebberDaemon(object):
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
+    parser.add_option("", "--fetchers", action="store", type="int",
+                      help="Run with [x] workers")
     #parser.add_option("", "--keep", action="store_true",
     #                  help="Store the download in a file")
     (options, args) = parser.parse_args()
@@ -66,5 +70,8 @@ if __name__ == '__main__':
         print("No urls given")
         sys.exit(os.EX_USAGE)
 
-    wd = WebberDaemon(seed_url=args[0])
+    wd = WebberDaemon(
+        seed_url=args[0],
+        num_fetchers=options.fetchers,
+    )
     wd.mainloop()

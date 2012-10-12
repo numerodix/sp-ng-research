@@ -6,8 +6,8 @@ import tempfile
 
 import requests
 
-import logutils
-logger = logutils.getLogger(__file__)
+#import logutils
+#logger = logutils.getLogger(__file__)
 
 
 def get_target_path(url):
@@ -28,6 +28,7 @@ class Request(object):
     def __init__(self, fetcher, url, chunk_size=10240, keep_file=False):
         self.fetcher = fetcher
         self.session = self.fetcher.session
+        self.logger = self.fetcher.logger
         self.url = url
         self.chunk_size = chunk_size
 
@@ -129,7 +130,7 @@ class Request(object):
     # Callbacks
 
     def pre_fetch(self):
-        logger.debug('Fetching headers: %s' % self.url)
+        self.logger.debug('Fetching headers: %s' % self.url)
 
     def received_headers(self):
         dct = {
@@ -138,7 +139,7 @@ class Request(object):
             'Content-Type': self.content_type,
         }
         msg = 'Fetched headers: %s\n%s' % (self.url, pprint.pformat(dct))
-        logger.debug(msg)
+        self.logger.debug(msg)
 
     def received_data(self, data):
         msg_progress = ''
@@ -152,10 +153,10 @@ class Request(object):
         msg = ('Received %s%s byte(s)%s: %s' %
                (self.data_length, msg_progress, msg_percent, self.url))
 
-        logger.debug(msg)
+        self.logger.debug(msg)
 
     def receive_aborted(self):
-        logger.debug('Aborted fetch: %s' % self.url)
+        self.logger.debug('Aborted fetch: %s' % self.url)
 
     def stored_file(self, target_path):
-        logger.debug('Stored file: %s: %s' % (target_path, self.url))
+        self.logger.debug('Stored file: %s: %s' % (target_path, self.url))
