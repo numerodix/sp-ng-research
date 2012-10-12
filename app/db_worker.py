@@ -83,25 +83,6 @@ class DbWorker(Worker):
 
         os.unlink(filepath)
 
-    def mainloop(self):
-        if self.seed_url:
-            self.init_db()
-            self.seed_queue(self.seed_url)
-
-        while True:
-            try:
-                msg = self.fetch_results.get_nowait()
-                self.store_new_url(msg)
-            except Empty:
-                pass
-
-            if self.fetch_queue.qsize() < 1:
-                qurl = self.dequeue_next_qurl()
-                self.fetch_queue.put(qurl)
-            else:
-                time.sleep(0.1)
-
-
     def spider(self, qurl, content):
         self.logger.info('Spidering: %s' % qurl)
         soup = BeautifulSoup(content)
@@ -161,3 +142,21 @@ class DbWorker(Worker):
         db.session.add(qurl)
         db.session.commit()
         self.logger.info('Enqueued: %s' % qurl)
+
+    def mainloop(self):
+        if self.seed_url:
+            self.init_db()
+            self.seed_queue(self.seed_url)
+
+        while True:
+            try:
+                msg = self.fetch_results.get_nowait()
+                self.store_new_url(msg)
+            except Empty:
+                pass
+
+            if self.fetch_queue.qsize() < 1:
+                qurl = self.dequeue_next_qurl()
+                self.fetch_queue.put(qurl)
+            else:
+                time.sleep(0.1)
