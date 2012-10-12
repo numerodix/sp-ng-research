@@ -157,4 +157,4 @@ class DbWorker(Worker):
                 qurl = self.dequeue_next_qurl()
                 self.fetch_queue.put(qurl)
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
