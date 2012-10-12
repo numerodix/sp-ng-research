@@ -43,7 +43,10 @@ class DbWorker(Worker):
         ).first()
         if qurl:
             self.logger.debug('Dequeued: %s' % qurl)
-            QueuedUrl.query.filter(QueuedUrl.id == qurl.id).delete()
+            QueuedUrl.query.filter(QueuedUrl.id == qurl.id).update({
+                'processing_status': 'fetching'
+            })
+            db.session.expunge_all()
             db.session.commit()
             return qurl
 
