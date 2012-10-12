@@ -43,9 +43,9 @@ class Request(object):
     def fetch(self):
         try:
             self.unsafe_fetch()
-        except:
+        except Exception as e:
             self.cleanup_tempfile()
-            raise
+            self.logger.exception(e)
 
     def unsafe_fetch(self):
         # allocate a tempfile
