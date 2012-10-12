@@ -79,7 +79,7 @@ class Request(object):
             self.store_file()
 
     def allocate_tempfile(self):
-        if self.keep_file:  # noop if option is disabled
+        if self.keep_file or self.keep_tempfile:  # noop if option is disabled
             self.fd, self.tempfile = tempfile.mkstemp(suffix='.partial', prefix='fetch_')
 
     def cleanup_tempfile(self):
