@@ -27,7 +27,7 @@ class DbWorker(Worker):
         self.logger.info('Creating models')
         db.create_all()
 
-    def seed_db(self, url):
+    def seed_queue(self, url):
         qurl = QueuedUrl(
             url=url,
             level=0,
@@ -53,7 +53,7 @@ class DbWorker(Worker):
     def mainloop(self):
         if self.seed_url:
             self.init_db()
-            self.seed_db(self.seed_url)
+            self.seed_queue(self.seed_url)
 
         while True:
             if self.fetch_queue.qsize() < 1:
