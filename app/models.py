@@ -21,6 +21,8 @@ class Url(db.Model):
     context = db.Column(db.String)
 
     status_code = db.Column(db.Integer)
+    content_type = db.Column(db.String)
+    content_length = db.Column(db.Integer)
 
     parent_id = db.Column(db.Integer, db.ForeignKey('url.id'))
     children = db.relationship(

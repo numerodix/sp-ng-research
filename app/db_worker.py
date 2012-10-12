@@ -66,22 +66,20 @@ class DbWorker(Worker):
     def store_new_url(self, msg):
         qurl = msg['qurl']
         url = msg['url']
+        filepath = msg['filepath']
 
-        parent = None
+        self.logger.debug("Storing: %s" % url)
+        url.content_length = os.path.getsize(filepath)
         if qurl.parent_url:
             url.parent = Url.query.filter(Url.url == qurl.parent_url).first()
 
-        self.logger.debug("Storing: %s" % url)
         db.session.add(url)
-
         QueuedUrl.query.filter(QueuedUrl.id == qurl.id).delete()
         db.session.commit()
 
-        filepath = msg['filepath']
         content = open(filepath).read()
-        self.spider(qurl, content)
-
         os.unlink(filepath)
+        self.spider(qurl, content)
 
     def spider(self, qurl, content):
         self.logger.info('Spidering: %s' % qurl)

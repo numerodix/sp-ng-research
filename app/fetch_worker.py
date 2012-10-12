@@ -42,6 +42,8 @@ class FetchWorker(Worker):
             level=qurl.level,
             context=qurl.context,
             status_code=request.status_code,
+            content_type=request.content_type,
+            content_length=request.content_length,
         )
         msg = {
             'qurl': qurl,
