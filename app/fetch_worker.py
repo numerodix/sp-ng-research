@@ -59,4 +59,4 @@ class FetchWorker(Worker):
                 self.logger.debug("Got from queue: %s" % qurl)
                 self.fetch(qurl)
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
