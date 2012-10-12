@@ -6,9 +6,6 @@ import tempfile
 
 import requests
 
-#import logutils
-#logger = logutils.getLogger(__file__)
-
 
 def get_target_path(url):
     """Wget's algorithm"""
@@ -25,7 +22,7 @@ def get_target_path(url):
     return target_path
 
 class Request(object):
-    def __init__(self, fetcher, url, chunk_size=10240, keep_file=False):
+    def __init__(self, fetcher, url, chunk_size=10240, keep_file=False, keep_tempfile=False):
         self.fetcher = fetcher
         self.session = self.fetcher.session
         self.logger = self.fetcher.logger
@@ -33,6 +30,7 @@ class Request(object):
         self.chunk_size = chunk_size
 
         self.keep_file = keep_file
+        self.keep_tempfile = keep_tempfile
         self.fd = None
         self.tempfile = None
         self.target_path = None
@@ -87,8 +85,9 @@ class Request(object):
     def cleanup_tempfile(self):
         if self.fd:
             os.close(self.fd)
-        if self.tempfile and os.path.isfile(self.tempfile):
-            os.unlink(self.tempfile)
+        if not self.keep_tempfile:
+            if self.tempfile and os.path.isfile(self.tempfile):
+                os.unlink(self.tempfile)
 
     def write_chunk(self, data):
         if self.fd:  # noop if we have no file descriptor

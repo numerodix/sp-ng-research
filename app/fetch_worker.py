@@ -34,7 +34,7 @@ class FetchWorker(Worker):
         super(FetchWorker, self).__init__()
 
     def fetch(self, qurl):
-        request = Request(self, qurl.url, keep_file=True)
+        request = Request(self, qurl.url, keep_tempfile=True)
         request.fetch()
 
         url = Url(
@@ -48,7 +48,7 @@ class FetchWorker(Worker):
         msg = {
             'qurl': qurl,
             'url': url,
-            'filepath': request.target_path,
+            'filepath': request.tempfile,
         }
         self.fetch_results.put(msg)
 
