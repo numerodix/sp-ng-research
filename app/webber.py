@@ -45,7 +45,9 @@ class WebberDaemon(object):
                 self.fetch_queue,
                 self.fetch_results,
                 self.seed_urls,
-            ])
+            ], kwargs=dict(
+                fetch_queue_preload=self.num_fetchers * 2,
+            ))
             self.child_procs.append(p)
             p.start()
 

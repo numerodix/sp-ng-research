@@ -24,8 +24,7 @@ class TermguiWorker(Worker):
         url = msg.get('url')
         perc = float(msg.get('content_percent') or 0)
 
-        if action == 'received_data':
-            self.gui.update(url, perc)
+        self.gui.update(url, perc)
 
     def mainloop(self):
         while True:

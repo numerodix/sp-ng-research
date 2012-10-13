@@ -188,7 +188,9 @@ class BroadcastingReceiver(object):
         return dct
 
     def pre_fetch(self):
-        pass
+        dct = self.get_state_dict()
+        dct['action'] = 'starting'
+        self.socket.send_pyobj(dct)
 
     def received_headers(self):
         pass

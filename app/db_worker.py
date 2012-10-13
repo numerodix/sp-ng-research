@@ -23,12 +23,13 @@ def urljoin(url, path):
     return url_new
 
 class DbWorker(Worker):
-    def __init__(self, fetch_queue, fetch_results, seed_urls=None):
+    def __init__(self, fetch_queue, fetch_results, seed_urls=None, fetch_queue_preload=1):
         # init multiproc data structures
         self.fetch_queue = fetch_queue
         self.fetch_results = fetch_results
         self.seed_urls = seed_urls
         self.host = self.seed_urls[0]
+        self.fetch_queue_preload = fetch_queue_preload
 
         # call base, dispatches to .mainloop
         super(DbWorker, self).__init__()
@@ -155,8 +156,9 @@ class DbWorker(Worker):
             except Empty:
                 pass
 
-            if self.fetch_queue.qsize() < 1:
-                qurl = self.dequeue_next_qurl()
-                self.fetch_queue.put(qurl)
+            if self.fetch_queue.qsize() < self.fetch_queue_preload:
+                for _ in xrange(self.fetch_queue_preload):
+                    qurl = self.dequeue_next_qurl()
+                    self.fetch_queue.put(qurl)
             else:
                 time.sleep(0.01)
