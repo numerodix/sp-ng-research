@@ -176,7 +176,7 @@ class BroadcastingReceiver(object):
 
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.PUB)
-        self.socket.bind('ipc://events')
+        self.socket.connect('ipc://events')
 
     def get_state_dict(self):
         dct = {

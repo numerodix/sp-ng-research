@@ -12,7 +12,7 @@ class TermguiWorker(Worker):
     def __init__(self):
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.SUB)
-        self.socket.connect('ipc://events')
+        self.socket.bind('ipc://events')
         self.socket.setsockopt(zmq.SUBSCRIBE, '')
 
         self.gui = ProgressbarTable()
@@ -30,8 +30,8 @@ class TermguiWorker(Worker):
     def mainloop(self):
         while True:
             msg = self.socket.recv_pyobj()
-            print msg
-            #self.render(msg)
+            #print msg
+            self.render(msg)
 
 
 class ProgressbarTable(object):
