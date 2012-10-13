@@ -18,13 +18,13 @@ class WebberDaemon(object):
     MODE_WEB = 0
     MODE_FETCH = 1
 
-    def __init__(self, mode=MODE_WEB, seed_urls=None, num_fetchers=1):
+    def __init__(self, mode=MODE_WEB, seed_urls=None, num_fetchers=None):
         self.fetch_results = Queue()
         self.fetch_queue = Queue()
 
         self.mode = mode
         self.seed_urls = seed_urls
-        self.num_fetchers = num_fetchers
+        self.num_fetchers = num_fetchers or 1
 
         self.child_procs = []
 
