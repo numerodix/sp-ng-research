@@ -19,11 +19,11 @@ class WebberDaemon(object):
     MODE_WEB = 0
     MODE_FETCH = 1
 
-    def __init__(self, mode=MODE_WEB, seed_urls=None, num_fetchers=None):
+    def __init__(self, mode=None, seed_urls=None, num_fetchers=None):
         self.fetch_results = Queue()
         self.fetch_queue = Queue()
 
-        self.mode = mode
+        self.mode = mode or self.MODE_WEB
         self.seed_urls = seed_urls
         self.num_fetchers = num_fetchers or 1
 
@@ -72,6 +72,7 @@ class WebberDaemon(object):
 
     def init_web_mode(self):
         self.spawn_db_workers(1)
+        self.spawn_termgui_workers(1)
         self.spawn_fetchers(self.num_fetchers)
         #self.spawn_web_workers(1)
 

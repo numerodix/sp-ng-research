@@ -18,7 +18,7 @@ def getLogger(name):
         name, _ = os.path.splitext(name)
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    #logger.setLevel(logging.DEBUG)
 
     stream_handler = logging.StreamHandler()
     #stream_handler.setFormatter(MultiLineFormatter())
