@@ -19,7 +19,7 @@ def urljoin(url, path):
         if not path.startswith('http'):
             url_new = urlparse.urljoin(url, path)
             url_new = re.sub('#.*$', '', url_new)  # remove fragment
-            url_new = re.sub('[.]{2}\/', '', url_new)
+            url_new = re.sub('[.]{2}\/', '', url_new)  # remove excessive ../
     return url_new
 
 class DbWorker(Worker):
