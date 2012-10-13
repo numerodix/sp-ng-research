@@ -10,6 +10,11 @@ class QueuedUrl(db.Model):
 
     processing_status = db.Column(db.String, default='new')
 
+    def __init__(self, **kwargs):
+        if not 'level' in kwargs:
+            kwargs['level'] = 0
+        super(QueuedUrl, self).__init__(**kwargs)
+
     def __repr__(self):
         return ("<QueuedUrl(level %s, '%s')>" %
                 (self.level, self.url))

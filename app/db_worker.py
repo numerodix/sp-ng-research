@@ -23,11 +23,12 @@ def urljoin(url, path):
     return url_new
 
 class DbWorker(Worker):
-    def __init__(self, fetch_queue, fetch_results, seed_url=None):
+    def __init__(self, fetch_queue, fetch_results, seed_urls=None):
         # init multiproc data structures
         self.fetch_queue = fetch_queue
         self.fetch_results = fetch_results
-        self.host = self.seed_url = seed_url
+        self.seed_urls = seed_urls
+        self.host = self.seed_urls[0]
 
         # call base, dispatches to .mainloop
         super(DbWorker, self).__init__()
@@ -42,12 +43,13 @@ class DbWorker(Worker):
         self.logger.info('Creating models')
         db.create_all()
 
-    def seed_queue(self, url):
-        qurl = QueuedUrl(
-            url=url,
-            level=0,
-        )
-        db.session.add(qurl)
+    def seed_queue(self, urls):
+        for url in urls:
+            qurl = QueuedUrl(
+                url=url,
+                level=0,
+            )
+            db.session.add(qurl)
         db.session.commit()
 
     def dequeue_next_qurl(self):
@@ -142,9 +144,9 @@ class DbWorker(Worker):
         self.logger.info('Enqueued: %s' % qurl)
 
     def mainloop(self):
-        if self.seed_url:
+        if self.seed_urls:
             self.init_db()
-            self.seed_queue(self.seed_url)
+            self.seed_queue(self.seed_urls)
 
         while True:
             try:

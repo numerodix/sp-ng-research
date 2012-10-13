@@ -7,17 +7,23 @@ import signal
 import time
 import sys
 
+from models import QueuedUrl
+
 from db_worker import DbWorker
 from fetch_worker import FetchWorker
 from web_worker import WebWorker
 
 
 class WebberDaemon(object):
-    def __init__(self, seed_url=None, num_fetchers=None):
+    MODE_WEB = 0
+    MODE_FETCH = 1
+
+    def __init__(self, mode=MODE_WEB, seed_urls=None, num_fetchers=None):
         self.fetch_results = Queue()
         self.fetch_queue = Queue()
 
-        self.seed_url = seed_url
+        self.mode = mode
+        self.seed_urls = seed_urls
         self.num_fetchers = num_fetchers or 1
 
         self.child_procs = []
@@ -36,7 +42,7 @@ class WebberDaemon(object):
             p = Process(target=DbWorker, args=[
                 self.fetch_queue,
                 self.fetch_results,
-                self.seed_url,
+                self.seed_urls,
             ])
             self.child_procs.append(p)
             p.start()
@@ -48,10 +54,22 @@ class WebberDaemon(object):
             self.child_procs.append(p)
             p.start()
 
+    def init_fetch_mode(self):
+        for url in self.seed_urls:
+            qurl = QueuedUrl(url=url)
+            self.fetch_queue.put(qurl)
+        self.spawn_fetchers(self.num_fetchers)
+
+    def init_web_mode(self):
+        self.spawn_db_workers(1)
+        self.spawn_fetchers(self.num_fetchers)
+        #self.spawn_web_workers(1)
+
     def mainloop(self):
-        #self.spawn_db_workers(1)
-        #self.spawn_fetchers(self.num_fetchers)
-        self.spawn_web_workers(1)
+        if self.mode == self.MODE_WEB:
+            self.init_web_mode()
+        elif self.mode == self.MODE_FETCH:
+            self.init_fetch_mode()
 
         try:
             while True:
@@ -71,6 +89,8 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("", "--fetchers", action="store", type="int",
                       help="Run with [x] workers")
+    parser.add_option("", "--fetch", action="store_true",
+                      help="Action = fetch")
     #parser.add_option("", "--keep", action="store_true",
     #                  help="Store the download in a file")
     (options, args) = parser.parse_args()
@@ -80,7 +100,8 @@ if __name__ == '__main__':
         sys.exit(os.EX_USAGE)
 
     wd = WebberDaemon(
-        seed_url=args[0],
+        seed_urls=args,
         num_fetchers=options.fetchers,
+        mode=options.fetch and WebberDaemon.MODE_FETCH,
     )
     wd.mainloop()
