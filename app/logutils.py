@@ -21,7 +21,8 @@ def getLogger(name):
     logger.setLevel(logging.DEBUG)
 
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(MultiLineFormatter())
+    #stream_handler.setFormatter(MultiLineFormatter())
+    stream_handler.setFormatter(formatter)
 
     logger.addHandler(stream_handler)
 

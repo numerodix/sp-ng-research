@@ -11,6 +11,7 @@ from models import QueuedUrl
 
 from db_worker import DbWorker
 from fetch_worker import FetchWorker
+from termgui_worker import TermguiWorker
 from web_worker import WebWorker
 
 
@@ -27,6 +28,7 @@ class WebberDaemon(object):
         self.num_fetchers = num_fetchers or 1
 
         self.child_procs = []
+
 
     def spawn_fetchers(self, count):
         for num in xrange(count):
@@ -47,23 +49,32 @@ class WebberDaemon(object):
             self.child_procs.append(p)
             p.start()
 
-    def spawn_web_workers(self, count):
+    def spawn_termgui_workers(self, count):
         for num in xrange(count):
-            p = Process(target=WebWorker, args=[
-            ])
+            p = Process(target=TermguiWorker)
             self.child_procs.append(p)
             p.start()
+
+    def spawn_web_workers(self, count):
+        for num in xrange(count):
+            p = Process(target=WebWorker)
+            self.child_procs.append(p)
+            p.start()
+
 
     def init_fetch_mode(self):
         for url in self.seed_urls:
             qurl = QueuedUrl(url=url)
             self.fetch_queue.put(qurl)
+
+        self.spawn_termgui_workers(1)
         self.spawn_fetchers(self.num_fetchers)
 
     def init_web_mode(self):
         self.spawn_db_workers(1)
         self.spawn_fetchers(self.num_fetchers)
         #self.spawn_web_workers(1)
+
 
     def mainloop(self):
         if self.mode == self.MODE_WEB:

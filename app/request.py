@@ -5,6 +5,7 @@ import shutil
 import tempfile
 
 import requests
+import zmq
 
 
 def get_target_path(url):
@@ -26,6 +27,10 @@ class Request(object):
         self.fetcher = fetcher
         self.session = self.fetcher.session
         self.logger = self.fetcher.logger
+
+        #self.receiver = DebuggingReceiver(self)
+        self.receiver = BroadcastingReceiver(self)
+
         self.url = url
         self.chunk_size = chunk_size
 
@@ -51,11 +56,11 @@ class Request(object):
         self.allocate_tempfile()
 
         # fire pre-fetch callback
-        self.pre_fetch()
+        self.receiver.pre_fetch()
 
         # establish connection and fetch headers, then fire callback
         self.response = self.session.get(self.url, prefetch=False)
-        self.received_headers()
+        self.receiver.received_headers()
 
         # start receiving the body
         for data in self.response.iter_content(chunk_size=self.chunk_size):
@@ -64,13 +69,13 @@ class Request(object):
             self.write_chunk(data)
 
             # fire received-data callback
-            self.received_data(data)
+            self.receiver.received_data(data)
 
             # are we shutting down?
             if not self.runnable:
                 # clean up tempfile and fire receive-aborted callback
                 self.cleanup_tempfile()
-                self.receive_aborted()
+                self.receiver.receive_aborted()
                 break
 
         # if we have not been aborted, move the data from a tempfile
@@ -100,7 +105,7 @@ class Request(object):
             self.cleanup_tempfile()
 
             # fire stored-file callback
-            self.stored_file(self.target_path)
+            self.receiver.stored_file(self.target_path)
 
     # Convenience properties
 
@@ -126,36 +131,75 @@ class Request(object):
         if not self.response is None:
             return self.response.status_code
 
-    # Callbacks
+
+class DebuggingReceiver(object):
+    def __init__(self, request):
+        self.request = request
+        self.logger = self.request.logger
 
     def pre_fetch(self):
-        self.logger.debug('Fetching headers: %s' % self.url)
+        self.logger.debug('Fetching headers: %s' % self.request.url)
 
     def received_headers(self):
         dct = {
-            'Status': self.status_code,
-            'Content-Length': self.content_length,
-            'Content-Type': self.content_type,
+            'Status': self.request.status_code,
+            'Content-Length': self.request.content_length,
+            'Content-Type': self.request.content_type,
         }
-        msg = 'Fetched headers: %s\n%s' % (self.url, pprint.pformat(dct))
+        msg = 'Fetched headers: %s\n%s' % (self.request.url, pprint.pformat(dct))
         self.logger.debug(msg)
 
     def received_data(self, data):
         msg_progress = ''
-        if self.content_length:
-            msg_progress = ' of %s' % self.content_length
+        if self.request.content_length:
+            msg_progress = ' of %s' % self.request.content_length
 
         msg_percent = ''
-        if self.content_percent:
-            msg_percent = ' %.1f%%' % self.content_percent
+        if self.request.content_percent:
+            msg_percent = ' %.1f%%' % self.request.content_percent
 
         msg = ('Received %s%s byte(s)%s: %s' %
-               (self.data_length, msg_progress, msg_percent, self.url))
+               (self.request.data_length, msg_progress, msg_percent, self.request.url))
 
         self.logger.debug(msg)
 
     def receive_aborted(self):
-        self.logger.debug('Aborted fetch: %s' % self.url)
+        self.logger.debug('Aborted fetch: %s' % self.request.url)
 
     def stored_file(self, target_path):
-        self.logger.debug('Stored file: %s: %s' % (target_path, self.url))
+        self.logger.debug('Stored file: %s: %s' % (target_path, self.request.url))
+
+
+class BroadcastingReceiver(object):
+    def __init__(self, request):
+        self.request = request
+
+        self.ctx = zmq.Context()
+        self.socket = self.ctx.socket(zmq.PUB)
+        self.socket.bind('ipc://events')
+
+    def get_state_dict(self):
+        dct = {
+            'action': None,
+            'url': self.request.url,
+            'status_code': self.request.status_code,
+            'content_percent': self.request.content_percent,
+        }
+        return dct
+
+    def pre_fetch(self):
+        pass
+
+    def received_headers(self):
+        pass
+
+    def received_data(self, data):
+        dct = self.get_state_dict()
+        dct['action'] = 'received_data'
+        self.socket.send_pyobj(dct)
+
+    def receive_aborted(self):
+        pass
+
+    def stored_file(self, target_path):
+        pass
