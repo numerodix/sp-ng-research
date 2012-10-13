@@ -2,9 +2,7 @@ import os
 import re
 import time
 import urlparse
-
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
+from wsgiref.simple_server import make_server
 
 from app import db
 from models import QueuedUrl
@@ -13,9 +11,9 @@ from models import Url
 from workerbase import Worker
 
 
-@Request.application
-def webapp(request):
-    return Response('Hi')
+def webapp(environ, start_response):
+    start_response('200 OK', [('Content-type', 'text/plain')])
+    return 'Hi'
 
 class WebWorker(Worker):
     def __init__(self):
@@ -24,5 +22,5 @@ class WebWorker(Worker):
         super(WebWorker, self).__init__()
 
     def mainloop(self):
-        from werkzeug.serving import run_simple
-        run_simple('localhost', 8000, webapp)
+        httpd = make_server('', 8000, webapp)
+        httpd.handle_request()
