@@ -14,10 +14,20 @@ class Worker(object):
         self.logger = getLogger(self.ident)
         self.logger.debug("Started")
 
+        self.child_procs = []
+
         self.mainloop()
 
     def signal_hander(self, signum, frame):
         self.logger.warn("Got signal: %s, shutting down" % signum)
+
+        for p in self.child_procs:
+            try:
+                os.kill(p.pid, signal.SIGTERM)
+            except OSError:
+                import traceback
+                traceback.print_exc()
+
         sys.exit()
 
     def mainloop(self):

@@ -9,6 +9,7 @@ import sys
 
 from db_worker import DbWorker
 from fetch_worker import FetchWorker
+from web_worker import WebWorker
 
 
 class WebberDaemon(object):
@@ -19,7 +20,7 @@ class WebberDaemon(object):
         self.seed_url = seed_url
         self.num_fetchers = num_fetchers or 1
 
-        self.procs = []
+        self.child_procs = []
 
     def spawn_fetchers(self, count):
         for num in xrange(count):
@@ -27,7 +28,7 @@ class WebberDaemon(object):
                 self.fetch_queue,
                 self.fetch_results,
             ])
-            self.procs.append(p)
+            self.child_procs.append(p)
             p.start()
 
     def spawn_db_workers(self, count):
@@ -37,19 +38,27 @@ class WebberDaemon(object):
                 self.fetch_results,
                 self.seed_url,
             ])
-            self.procs.append(p)
+            self.child_procs.append(p)
+            p.start()
+
+    def spawn_web_workers(self, count):
+        for num in xrange(count):
+            p = Process(target=WebWorker, args=[
+            ])
+            self.child_procs.append(p)
             p.start()
 
     def mainloop(self):
-        self.spawn_db_workers(1)
-        self.spawn_fetchers(self.num_fetchers)
+        #self.spawn_db_workers(1)
+        #self.spawn_fetchers(self.num_fetchers)
+        self.spawn_web_workers(1)
 
         try:
             while True:
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
-            for p in self.procs:
+            for p in self.child_procs:
                 try:
                     os.kill(p.pid, signal.SIGTERM)
                 except OSError:
