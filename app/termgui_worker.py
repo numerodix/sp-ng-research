@@ -4,7 +4,7 @@ import sys
 
 import zmq
 
-import ansi
+from lib import ansi
 
 from stringformat import format_eta
 from stringformat import format_int
