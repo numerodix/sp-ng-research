@@ -25,14 +25,10 @@ class TermguiWorker(Worker):
 
         super(TermguiWorker, self).__init__()
 
-    def render(self, msg):
-        self.gui.update(msg)
-
     def mainloop(self):
         while True:
             msg = self.socket.recv_pyobj()
-            #print msg
-            self.render(msg)
+            self.gui.update(msg)
 
 
 class ProgressbarTable(object):
@@ -52,6 +48,9 @@ row0  Fetching http://debian.com/readme.html
     def __init__(self):
         self.cell_keys = []
         self.cell_height = 3
+
+        self.update_interval = 0.1
+        self.last_update = 0
 
         self.term_width = None
         self.set_term_width()
@@ -113,8 +112,12 @@ row0  Fetching http://debian.com/readme.html
         self.move_to_the_bottom_from(key)
 
     def update(self, msg):
-        self.set_term_width()
-        self.display(msg)
+        action = msg.get('action')
+        if (action == 'Receiving body' and
+            time.time() - self.last_update > self.update_interval):
+            self.last_update = time.time()
+            self.set_term_width()
+            self.display(msg)
 
 
     def render_progressbar(self, percent, width):

@@ -87,6 +87,9 @@ class Request(object):
 
             t_pre = time.time()
 
+        # fire receive-completed callback
+        self.receiver.receive_completed()
+
         # if we have not been aborted, move the data from a tempfile
         # to a target path
         if self.runnable:
@@ -195,6 +198,9 @@ class DebuggingReceiver(object):
     def receive_aborted(self):
         self.logger.debug('Aborted fetch: %s' % self.request.url)
 
+    def receive_completed(self):
+        self.logger.debug('Completed fetch: %s' % self.request.url)
+
     def stored_file(self, target_path):
         self.logger.debug('Stored file: %s: %s' % (target_path, self.request.url))
 
@@ -232,15 +238,20 @@ class BroadcastingReceiver(object):
         self.socket.send_pyobj(dct)
 
     def received_headers(self):
-        dct = self.get_state_dict(action='Fetching')
+        dct = self.get_state_dict(action='Received headers')
         self.socket.send_pyobj(dct)
 
     def received_data(self, data):
-        dct = self.get_state_dict(action='Fetching')
+        dct = self.get_state_dict(action='Receiving body')
         self.socket.send_pyobj(dct)
 
     def receive_aborted(self):
-        pass
+        dct = self.get_state_dict(action='Fetch aborted')
+        self.socket.send_pyobj(dct)
+
+    def receive_completed(self):
+        dct = self.get_state_dict(action='Fetch completed')
+        self.socket.send_pyobj(dct)
 
     def stored_file(self, target_path):
         pass
