@@ -33,8 +33,12 @@ class FetchWorker(Worker):
         # call base, dispatches to .mainloop
         super(FetchWorker, self).__init__()
 
-    def fetch(self, qres):
-        request = Request(self, qres.url, keep_tempfile=True)
+    def fetch(self, msg):
+        qres = msg.get('qres')
+        keep_file = msg.get('keep_file')
+        keep_tempfile = msg.get('keep_tempfile')
+
+        request = Request(self, qres.url, keep_file=keep_file, keep_tempfile=keep_tempfile)
         request.fetch()
 
         res = Resource(
@@ -54,9 +58,9 @@ class FetchWorker(Worker):
 
     def mainloop(self):
         while True:
-            qres = self.fetch_queue.get()
-            if qres:
-                self.logger.debug("Got from queue: %s" % qres)
-                self.fetch(qres)
+            msg = self.fetch_queue.get()
+            if msg:
+                self.logger.debug("Got from queue: %s" % msg)
+                self.fetch(msg)
             else:
                 time.sleep(0.01)

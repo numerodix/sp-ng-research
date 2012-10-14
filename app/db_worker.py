@@ -159,6 +159,11 @@ class DbWorker(Worker):
             if self.fetch_queue.qsize() < self.fetch_queue_preload:
                 for _ in xrange(self.fetch_queue_preload):
                     qres = self.dequeue_next_qres()
-                    self.fetch_queue.put(qres)
+                    if qres:
+                        msg = {
+                            'qres': qres,
+                            'keep_tempfile': True,
+                        }
+                        self.fetch_queue.put(msg)
             else:
                 time.sleep(0.01)

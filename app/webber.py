@@ -77,8 +77,11 @@ class WebberDaemon(object):
     def mainloop_fetch(self):
         completed_fetches = set()
         for url in self.seed_urls:
-            qurl = QueuedResource(url=url)
-            self.fetch_queue.put(qurl)
+            msg = {
+                'qres': QueuedResource(url=url),
+                'keep_file': True,
+            }
+            self.fetch_queue.put(msg)
 
         self.spawn_termgui_workers(1)
         self.spawn_fetchers(self.num_fetchers)
