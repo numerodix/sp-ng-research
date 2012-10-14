@@ -156,7 +156,7 @@ row0  Fetching http://debian.com/readme.html
         recv_fmt = format_int(content_received_length)
         rate_fmt = format_rate(rate)
         eta_fmt = format_eta(eta)
-        row3 = '{0:3d}% {1} {2:12} {3}  eta {4}'.format(
+        row3 = '{0:3d}% {1} {2:12} {3:>6}  eta {4}'.format(
             content_received_percent, progress_bar, recv_fmt, rate_fmt, eta_fmt,
         )
 
