@@ -5,6 +5,7 @@ import zmq
 
 import ansi
 
+from util import zmqsockets
 from workerbase import Worker
 
 
@@ -12,7 +13,7 @@ class TermguiWorker(Worker):
     def __init__(self):
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.SUB)
-        self.socket.bind('ipc://events')
+        self.socket.bind(zmqsockets.fetcher_broadcast)
         self.socket.setsockopt(zmq.SUBSCRIBE, '')
 
         self.gui = ProgressbarTable()

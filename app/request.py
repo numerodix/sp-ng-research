@@ -7,6 +7,8 @@ import tempfile
 import requests
 import zmq
 
+from util import zmqsockets
+
 
 def get_target_path(url):
     """Wget's algorithm"""
@@ -176,7 +178,7 @@ class BroadcastingReceiver(object):
 
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.PUB)
-        self.socket.connect('ipc://events')
+        self.socket.connect(zmqsockets.fetcher_broadcast)
 
     def get_state_dict(self):
         dct = {
