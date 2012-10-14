@@ -3,6 +3,7 @@ import pprint
 import re
 import shutil
 import tempfile
+import time
 
 import requests
 import zmq
@@ -44,6 +45,7 @@ class Request(object):
 
         self.response = None
         self.data_length = 0
+        self.lastchunk_time = 0
         self.runnable = True
 
     def fetch(self):
@@ -65,7 +67,10 @@ class Request(object):
         self.receiver.received_headers()
 
         # start receiving the body
+        t_pre = time.time()
         for data in self.response.iter_content(chunk_size=self.chunk_size):
+            self.lastchunk_time = time.time() - t_pre
+
             # update data cursor and store the chunk
             self.data_length += len(data)
             self.write_chunk(data)
@@ -79,6 +84,8 @@ class Request(object):
                 self.cleanup_tempfile()
                 self.receiver.receive_aborted()
                 break
+
+            t_pre = time.time()
 
         # if we have not been aborted, move the data from a tempfile
         # to a target path
@@ -131,6 +138,22 @@ class Request(object):
     def content_type(self):
         if not self.response is None:
             return self.response.headers.get('content-type')
+
+    @property
+    def rate(self):
+        try:
+            return float(self.chunk_size) / (self.lastchunk_time or 1)
+        except ZeroDivisionError:
+            pass
+
+    @property
+    def eta(self):
+        rate = self.rate
+        content_length = self.content_length
+        content_received_length = self.content_received_length
+        if rate and content_length and content_received_length:
+            remaining = content_length - content_received_length
+            return remaining / rate
 
     @property
     def status_code(self):
@@ -194,6 +217,8 @@ class BroadcastingReceiver(object):
             'content_received_length',
             'content_received_percent',
             'content_type',
+            'eta',
+            'rate',
             'status_code',
         ]
         for attname in atts:

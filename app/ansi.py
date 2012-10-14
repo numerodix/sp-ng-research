@@ -30,8 +30,8 @@ import re
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
 def write(s):
-    sys.stdout.write(s)
-    sys.stdout.flush()
+    sys.stderr.write(s)
+    sys.stderr.flush()
 
 def up(n=1):
     write("\x1b[%dA" % n)

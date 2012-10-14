@@ -39,6 +39,14 @@ def format_int(num):
         return format_int(new)
     return new
 
+def format_rate(num):
+    units = ['B', 'K', 'M', 'G', 'T']
+    i = 0
+    while num > 1023:
+        i += 1
+        num /= 1024
+    return '{0}{1}/s'.format(num, units[i])
+
 class ProgressbarTable(object):
     """ A table made up of multi-row cells.
 
@@ -136,11 +144,13 @@ row0  Fetching http://debian.com/readme.html
     def render(self, msg):
         action = msg.get('action') or ''
         url = msg.get('url')
-        status_code = msg.get('status_code')
         content_length = msg.get('content_length') or '?'
         content_received_length = msg.get('content_received_length') or '?'
         content_received_percent = int(msg.get('content_received_percent') or 0)
         content_type = msg.get('content_type')
+        eta = int(msg.get('eta') or 0)
+        rate = int(msg.get('rate') or 0)
+        status_code = msg.get('status_code')
 
         # render rows
         row1 = 'Fetching {0}'.format(url)
@@ -151,9 +161,13 @@ row0  Fetching http://debian.com/readme.html
             type_fmt = '[{0}]'.format(content_type) if content_type else ''
             row2 = 'HTTP {0}. Length: {1} {2}'.format(status_code, length_fmt, type_fmt)
 
-        progress_bar = self.render_progressbar(content_received_percent, self.term_width - 30)
+        progress_bar = self.render_progressbar(content_received_percent, self.term_width - 40)
         recv_fmt = format_int(content_received_length)
-        row3 = '{0:3d}% {1} {2}'.format(content_received_percent, progress_bar, recv_fmt)
+        rate_fmt = format_rate(rate)
+        eta_fmt = eta
+        row3 = '{0:3d}% {1} {2:12} {3}  eta {4}s'.format(
+            content_received_percent, progress_bar, recv_fmt, rate_fmt, eta_fmt,
+        )
 
         return url, [row1, row2, row3]
 
