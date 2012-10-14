@@ -142,7 +142,7 @@ class Request(object):
     @property
     def rate(self):
         try:
-            return float(self.chunk_size) / (self.lastchunk_time or 1)
+            return float(self.chunk_size) / self.lastchunk_time
         except ZeroDivisionError:
             pass
 
