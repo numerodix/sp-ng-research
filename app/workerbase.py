@@ -19,7 +19,7 @@ class Worker(object):
         self.mainloop()
 
     def signal_hander(self, signum, frame):
-        self.logger.warn("Got signal: %s, shutting down" % signum)
+        self.logger.info("Got signal: %s, shutting down" % signum)
 
         for p in self.child_procs:
             try:

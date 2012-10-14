@@ -93,7 +93,7 @@ class WebberDaemon(object):
 
                 if msg:
                     url = msg.get('url')
-                    completed_fetches.update(key.url)
+                    completed_fetches.update([url.url])
                     if completed_fetches == set(self.seed_urls):
                         self.terminate_workers()
                         break
