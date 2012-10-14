@@ -8,7 +8,7 @@ import signal
 import time
 import sys
 
-from models import QueuedUrl
+from models import QueuedResource
 
 from db_worker import DbWorker
 from fetch_worker import FetchWorker
@@ -77,7 +77,7 @@ class WebberDaemon(object):
     def mainloop_fetch(self):
         completed_fetches = set()
         for url in self.seed_urls:
-            qurl = QueuedUrl(url=url)
+            qurl = QueuedResource(url=url)
             self.fetch_queue.put(qurl)
 
         self.spawn_termgui_workers(1)

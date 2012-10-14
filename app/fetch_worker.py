@@ -2,7 +2,7 @@ import time
 
 import requests
 
-from models import Url
+from models import Resource
 
 from request import Request
 from workerbase import Worker
@@ -33,30 +33,30 @@ class FetchWorker(Worker):
         # call base, dispatches to .mainloop
         super(FetchWorker, self).__init__()
 
-    def fetch(self, qurl):
-        request = Request(self, qurl.url, keep_tempfile=True)
+    def fetch(self, qres):
+        request = Request(self, qres.url, keep_tempfile=True)
         request.fetch()
 
-        url = Url(
-            url=qurl.url,
-            level=qurl.level,
-            context=qurl.context,
+        res = Resource(
+            url=qres.url,
+            level=qres.level,
+            context=qres.context,
             status_code=request.status_code,
             content_type=request.content_type,
             content_length=request.content_length,
         )
         msg = {
-            'qurl': qurl,
-            'url': url,
+            'qres': qres,
+            'res': res,
             'filepath': request.tempfile,
         }
         self.fetch_results.put(msg)
 
     def mainloop(self):
         while True:
-            qurl = self.fetch_queue.get()
-            if qurl:
-                self.logger.debug("Got from queue: %s" % qurl)
-                self.fetch(qurl)
+            qres = self.fetch_queue.get()
+            if qres:
+                self.logger.debug("Got from queue: %s" % qres)
+                self.fetch(qres)
             else:
                 time.sleep(0.01)

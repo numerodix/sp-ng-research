@@ -5,8 +5,6 @@ import urlparse
 from wsgiref.simple_server import make_server
 
 from app import db
-from models import QueuedUrl
-from models import Url
 
 from workerbase import Worker
 

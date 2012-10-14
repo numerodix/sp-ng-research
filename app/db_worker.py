@@ -7,8 +7,8 @@ import urlparse
 from bs4 import BeautifulSoup
 
 from app import db
-from models import QueuedUrl
-from models import Url
+from models import QueuedResource
+from models import Resource
 
 from workerbase import Worker
 
@@ -46,54 +46,54 @@ class DbWorker(Worker):
 
     def seed_queue(self, urls):
         for url in urls:
-            qurl = QueuedUrl(
+            qres = QueuedResource(
                 url=url,
                 level=0,
             )
-            db.session.add(qurl)
+            db.session.add(qres)
         db.session.commit()
 
-    def dequeue_next_qurl(self):
-        qurl = QueuedUrl.query.filter(
-            QueuedUrl.processing_status == 'new',
+    def dequeue_next_qres(self):
+        qres = QueuedResource.query.filter(
+            QueuedResource.processing_status == 'new',
         ).first()
-        if qurl:
-            self.logger.debug('Dequeued: %s' % qurl)
-            QueuedUrl.query.filter(QueuedUrl.id == qurl.id).update({
+        if qres:
+            self.logger.debug('Dequeued: %s' % qres)
+            QueuedResource.query.filter(QueuedResource.id == qres.id).update({
                 'processing_status': 'fetchable'
             })
             db.session.expunge_all()
             db.session.commit()
-            return qurl
+            return qres
 
     def store_new_url(self, msg):
-        qurl = msg['qurl']
-        url = msg['url']
+        qres = msg['qres']
+        res = msg['res']
         filepath = msg['filepath']
 
-        self.logger.debug("Storing: %s" % url)
-        url.content_length = os.path.getsize(filepath)
-        if qurl.parent_url:
-            url.parent = Url.query.filter(Url.url == qurl.parent_url).first()
+        self.logger.debug("Storing: %s" % res)
+        res.content_length = os.path.getsize(filepath)
+        if qres.parent_url:
+            res.parent = Resource.query.filter(Resource.url == qres.parent_url).first()
 
-        db.session.add(url)
-        QueuedUrl.query.filter(QueuedUrl.id == qurl.id).delete()
+        db.session.add(res)
+        QueuedResource.query.filter(QueuedResource.id == qres.id).delete()
         db.session.commit()
 
         content = open(filepath).read()
         os.unlink(filepath)
-        self.spider(qurl, content)
+        self.spider(qres, content)
 
-    def spider(self, qurl, content):
-        self.logger.info('Spidering: %s' % qurl)
+    def spider(self, qres, content):
+        self.logger.info('Spidering: %s' % qres)
         soup = BeautifulSoup(content)
 
-        level = qurl.level + 1
+        level = qres.level + 1
 
         def enqueue(url, context):
-            self.enqueue_new_qurl(qurl, {
-                'parent_url': qurl.url,
-                'url': urljoin(qurl.url, url),
+            self.enqueue_new_qres(qres, {
+                'parent_url': qres.url,
+                'url': urljoin(qres.url, url),
                 'context': context,
                 'level': level,
             })
@@ -122,7 +122,7 @@ class DbWorker(Worker):
             url = elem.get('src')
             enqueue(url, 'embed')
 
-    def enqueue_new_qurl(self, parent, dct):
+    def enqueue_new_qres(self, parent, dct):
         url = dct.get('url')
         #self.logger.debug('Enqueuing: %s' % url)
 
@@ -135,14 +135,14 @@ class DbWorker(Worker):
             return
         if parent and url == parent.url:
             return
-        if (QueuedUrl.query.filter(QueuedUrl.url == url).first()
-            or Url.query.filter(Url.url == url).first()):
+        if (QueuedResource.query.filter(QueuedResource.url == url).first()
+            or Resource.query.filter(Resource.url == url).first()):
             return
 
-        qurl = QueuedUrl(**dct)
-        db.session.add(qurl)
+        qres = QueuedResource(**dct)
+        db.session.add(qres)
         db.session.commit()
-        self.logger.info('Enqueued: %s' % qurl)
+        self.logger.info('Enqueued: %s' % qres)
 
     def mainloop(self):
         if self.seed_urls:
@@ -158,7 +158,7 @@ class DbWorker(Worker):
 
             if self.fetch_queue.qsize() < self.fetch_queue_preload:
                 for _ in xrange(self.fetch_queue_preload):
-                    qurl = self.dequeue_next_qurl()
-                    self.fetch_queue.put(qurl)
+                    qres = self.dequeue_next_qres()
+                    self.fetch_queue.put(qres)
             else:
                 time.sleep(0.01)
