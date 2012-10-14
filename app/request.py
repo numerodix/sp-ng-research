@@ -119,7 +119,11 @@ class Request(object):
             pass
 
     @property
-    def content_percent(self):
+    def content_received_length(self):
+        return self.data_length
+
+    @property
+    def content_received_percent(self):
         if self.content_length:
             return max(0.0, min(100.0, float(100 * self.data_length) / self.content_length))
 
@@ -157,8 +161,8 @@ class DebuggingReceiver(object):
             msg_progress = ' of %s' % self.request.content_length
 
         msg_percent = ''
-        if self.request.content_percent:
-            msg_percent = ' %.1f%%' % self.request.content_percent
+        if self.request.content_received_percent:
+            msg_percent = ' %.1f%%' % self.request.content_received_percent
 
         msg = ('Received %s%s byte(s)%s: %s' %
                (self.request.data_length, msg_progress, msg_percent, self.request.url))
@@ -187,7 +191,8 @@ class BroadcastingReceiver(object):
         }
         atts = [
             'content_length',
-            'content_percent',
+            'content_received_length',
+            'content_received_percent',
             'content_type',
             'status_code',
         ]
@@ -202,7 +207,8 @@ class BroadcastingReceiver(object):
         self.socket.send_pyobj(dct)
 
     def received_headers(self):
-        pass
+        dct = self.get_state_dict(action='Fetching')
+        self.socket.send_pyobj(dct)
 
     def received_data(self, data):
         dct = self.get_state_dict(action='Fetching')

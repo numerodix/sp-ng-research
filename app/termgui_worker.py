@@ -98,38 +98,6 @@ row0  Fetching http://debian.com/readme.html
     def move_to_the_bottom_from(self, from_key):
         return self.move_to(from_key, self.cell_keys[0])
 
-    def render_progressbar(self, percent):
-        progbar_ln = self.term_width - 20
-        progbar_struct_ln = 3
-        progbar_prog_ln = progbar_ln - progbar_struct_ln
-        done_ln = int( progbar_prog_ln * (float(percent) / 100))
-        left_ln = progbar_prog_ln - done_ln
-        done_s = '=' * done_ln + '>' if percent < 100 else '=' * (done_ln + 1)
-        left_s = ' ' * left_ln
-        return '[{0}{1}]'.format(done_s, left_s)
-
-    def render(self, msg):
-        action = msg.get('action') or ''
-        url = msg.get('url')
-        status_code = msg.get('status_code')
-        content_length = msg.get('content_length') or '?'
-        content_percent = int(msg.get('content_percent') or 0)
-        content_type = msg.get('content_type')
-
-        # render rows
-        row1 = 'Fetching {0}'.format(url)
-
-        row2 = '{0}'.format(action)
-        if status_code:
-            length_fmt = format_int(content_length)
-            type_fmt = '[{0}]'.format(content_type) if content_type else ''
-            row2 = 'HTTP {0}. Length: {1} {2}'.format(status_code, length_fmt, type_fmt)
-
-        progress_bar = self.render_progressbar(content_percent)
-        row3 = '{0:3d}% {1}'.format(content_percent, progress_bar)
-
-        return url, [row1, row2, row3]
-
     def display(self, msg):
         key, rows = self.render(msg)
 
@@ -153,6 +121,43 @@ row0  Fetching http://debian.com/readme.html
         self.display(msg)
 
 
+    def render_progressbar(self, percent, width):
+        progbar_struct_ln = 3
+        progbar_prog_ln = width - progbar_struct_ln
+
+        done_ln = int( progbar_prog_ln * (float(percent) / 100))
+        left_ln = progbar_prog_ln - done_ln
+
+        done_s = '=' * done_ln + '>' if percent < 100 else '=' * (done_ln + 1)
+        left_s = ' ' * left_ln
+
+        return '[{0}{1}]'.format(done_s, left_s)
+
+    def render(self, msg):
+        action = msg.get('action') or ''
+        url = msg.get('url')
+        status_code = msg.get('status_code')
+        content_length = msg.get('content_length') or '?'
+        content_received_length = msg.get('content_received_length') or '?'
+        content_received_percent = int(msg.get('content_received_percent') or 0)
+        content_type = msg.get('content_type')
+
+        # render rows
+        row1 = 'Fetching {0}'.format(url)
+
+        row2 = '{0}'.format(action)
+        if status_code:
+            length_fmt = format_int(content_length)
+            type_fmt = '[{0}]'.format(content_type) if content_type else ''
+            row2 = 'HTTP {0}. Length: {1} {2}'.format(status_code, length_fmt, type_fmt)
+
+        progress_bar = self.render_progressbar(content_received_percent, self.term_width - 30)
+        recv_fmt = format_int(content_received_length)
+        row3 = '{0:3d}% {1} {2}'.format(content_received_percent, progress_bar, recv_fmt)
+
+        return url, [row1, row2, row3]
+
+
 if __name__ == '__main__':
     import random
     gui = ProgressbarTable()
@@ -167,6 +172,6 @@ if __name__ == '__main__':
         gui.update({
             'url': key,
             'status_code': 200,
-            'content_percent': perc,
+            'content_received_percent': perc,
         })
         time.sleep(.15)
