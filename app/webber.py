@@ -2,6 +2,7 @@
 
 from multiprocessing import Queue
 from multiprocessing import Process
+from multiprocessing.queues import Empty
 import os
 import signal
 import time
@@ -64,7 +65,17 @@ class WebberDaemon(object):
             p.start()
 
 
-    def init_fetch_mode(self):
+    def terminate_workers(self):
+        for p in self.child_procs:
+            try:
+                os.kill(p.pid, signal.SIGTERM)
+            except OSError:
+                import traceback
+                traceback.print_exc()
+
+
+    def mainloop_fetch(self):
+        completed_fetches = set()
         for url in self.seed_urls:
             qurl = QueuedUrl(url=url)
             self.fetch_queue.put(qurl)
@@ -72,30 +83,41 @@ class WebberDaemon(object):
         self.spawn_termgui_workers(1)
         self.spawn_fetchers(self.num_fetchers)
 
-    def init_web_mode(self):
+        try:
+            while True:
+                msg = None
+                try:
+                    msg = self.fetch_results.get(True, 0.01)
+                except Empty:
+                    pass
+
+                if msg:
+                    url = msg.get('url')
+                    completed_fetches.update(key.url)
+                    if completed_fetches == set(self.seed_urls):
+                        self.terminate_workers()
+                        break
+        except KeyboardInterrupt:
+            self.terminate_workers()
+
+    def mainloop_web(self):
         self.spawn_db_workers(1)
         self.spawn_termgui_workers(1)
         self.spawn_fetchers(self.num_fetchers)
         #self.spawn_web_workers(1)
 
+        try:
+            while True:
+                time.sleep(0.03)
+        except KeyboardInterrupt:
+            self.terminate_workers()
 
     def mainloop(self):
         if self.mode == self.MODE_WEB:
-            self.init_web_mode()
+            return self.mainloop_web()
         elif self.mode == self.MODE_FETCH:
-            self.init_fetch_mode()
+            return self.mainloop_fetch()
 
-        try:
-            while True:
-                time.sleep(0.1)
-
-        except KeyboardInterrupt:
-            for p in self.child_procs:
-                try:
-                    os.kill(p.pid, signal.SIGTERM)
-                except OSError:
-                    import traceback
-                    traceback.print_exc()
 
 
 if __name__ == '__main__':
