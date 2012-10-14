@@ -32,46 +32,6 @@ class TermguiWorker(Worker):
             self.render(msg)
 
 
-class _ProgressbarTable(object):
-    def __init__(self):
-        self.linekeys = []
-
-    def update(self, linekey, perc):
-        key_width = 36
-        padding = 1
-        bar_width = 32
-        perc_width = 1 + 5
-
-        ln = int(bar_width * (float(perc) / 100))
-        fill_ln = bar_width - ln - 1
-
-        pr = '=' * ln
-        fill = ' ' * fill_ln
-
-        cont_ln = 2
-        fix_ln = (key_width / 2) - cont_ln
-        prefix = linekey[:fix_ln]
-        suffix = linekey[-fix_ln + cont_ln:]
-        cont = '.' * cont_ln
-        key = '%s%s%s' % (prefix, cont, suffix)
-
-        msg = '%s [%s>%s] %2.1f%%\r' % (key, pr, fill, perc)
-        self.render_line(linekey, msg)
-
-    def render_line(self, linekey, line):
-        if linekey not in self.linekeys:
-            self.linekeys.append(linekey)
-            ansi.write('\n')  # add a row to our table
-
-        idx = self.linekeys.index(linekey)
-        y = len(self.linekeys) - idx
-
-        ansi.up(y)
-        ansi.clear_line()
-        ansi.write(line)
-        ansi.down(y)
-
-
 def format_int(num):
     num = '%s' % num
     new = re.sub('(\d+)(\d{3})(,|$)', '\g<1>,\g<2>', num)
