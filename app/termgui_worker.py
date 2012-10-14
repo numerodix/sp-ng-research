@@ -6,6 +6,9 @@ import zmq
 
 import ansi
 
+from stringformat import format_eta
+from stringformat import format_int
+from stringformat import format_rate
 from util import getTerminalSize
 from util import zmqsockets
 from workerbase import Worker
@@ -31,21 +34,6 @@ class TermguiWorker(Worker):
             #print msg
             self.render(msg)
 
-
-def format_int(num):
-    num = '%s' % num
-    new = re.sub('(\d+)(\d{3})(,|$)', '\g<1>,\g<2>', num)
-    if new != num:
-        return format_int(new)
-    return new
-
-def format_rate(num):
-    units = ['B', 'K', 'M', 'G', 'T']
-    i = 0
-    while num > 1023:
-        i += 1
-        num /= 1024
-    return '{0}{1}/s'.format(num, units[i])
 
 class ProgressbarTable(object):
     """ A table made up of multi-row cells.
@@ -164,8 +152,8 @@ row0  Fetching http://debian.com/readme.html
         progress_bar = self.render_progressbar(content_received_percent, self.term_width - 40)
         recv_fmt = format_int(content_received_length)
         rate_fmt = format_rate(rate)
-        eta_fmt = eta
-        row3 = '{0:3d}% {1} {2:12} {3}  eta {4}s'.format(
+        eta_fmt = format_eta(eta)
+        row3 = '{0:3d}% {1} {2:12} {3}  eta {4}'.format(
             content_received_percent, progress_bar, recv_fmt, rate_fmt, eta_fmt,
         )
 
