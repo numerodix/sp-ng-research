@@ -121,7 +121,7 @@ class Request(object):
     @property
     def content_percent(self):
         if self.content_length:
-            return float(100 * self.data_length) / self.content_length
+            return max(0.0, min(100.0, float(100 * self.data_length) / self.content_length))
 
     @property
     def content_type(self):
@@ -180,26 +180,32 @@ class BroadcastingReceiver(object):
         self.socket = self.ctx.socket(zmq.PUB)
         self.socket.connect(zmqsockets.fetcher_broadcast)
 
-    def get_state_dict(self):
+    def get_state_dict(self, action=None):
         dct = {
-            'action': None,
+            'action': action,
             'url': self.request.url,
-            'status_code': self.request.status_code,
-            'content_percent': self.request.content_percent,
         }
+        atts = [
+            'content_length',
+            'content_percent',
+            'content_type',
+            'status_code',
+        ]
+        for attname in atts:
+            val = getattr(self.request, attname, None)
+            if val:
+                dct[attname] = val
         return dct
 
     def pre_fetch(self):
-        dct = self.get_state_dict()
-        dct['action'] = 'starting'
+        dct = self.get_state_dict(action='Connecting')
         self.socket.send_pyobj(dct)
 
     def received_headers(self):
         pass
 
     def received_data(self, data):
-        dct = self.get_state_dict()
-        dct['action'] = 'received_data'
+        dct = self.get_state_dict(action='Fetching')
         self.socket.send_pyobj(dct)
 
     def receive_aborted(self):
